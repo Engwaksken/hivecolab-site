@@ -15,6 +15,7 @@ function hive_documents_schema() {
       'filename' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
       'thumbnail_uri' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE),
       'year' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+      'publication_month' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => FALSE),
       'frequency' => array('type' => 'varchar', 'length' => 20, 'not null' => FALSE),
       'created' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
     ),
@@ -61,4 +62,25 @@ function hive_documents_update_7002() {
     ->condition('category', 'newsletter')
     ->execute();
   return t('Added document publication frequency. Existing newsletters are marked monthly.');
+}
+
+/**
+ * Add an issue month for newsletters and backfill it from upload dates.
+ */
+function hive_documents_update_7003() {
+  if (!db_field_exists('hive_documents', 'publication_month')) {
+    db_add_field('hive_documents', 'publication_month', array(
+      'type' => 'int', 'unsigned' => TRUE, 'not null' => FALSE,
+    ));
+  }
+  $newsletters = db_select('hive_documents', 'd')
+    ->fields('d', array('id', 'created'))
+    ->condition('category', 'newsletter')
+    ->execute();
+  foreach ($newsletters as $newsletter) {
+    db_update('hive_documents')->fields(array(
+      'publication_month' => (int) format_date($newsletter->created, 'custom', 'n'),
+    ))->condition('id', $newsletter->id)->execute();
+  }
+  return t('Added issue months for newsletters. Existing issue months were inferred from upload dates.');
 }

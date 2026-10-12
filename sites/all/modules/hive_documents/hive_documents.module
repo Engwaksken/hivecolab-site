@@ -64,9 +64,25 @@ function hive_documents_upload_form($form, &$form_state) {
   );
   $form['description'] = array('#type' => 'textarea', '#title' => t('Description'));
   $form['year'] = array(
-    '#type' => 'textfield', '#title' => t('Publication year'), '#required' => TRUE,
+    '#type' => 'textfield', '#title' => t('Publication year'),
     '#default_value' => format_date(REQUEST_TIME, 'custom', 'Y'), '#maxlength' => 4,
-    '#description' => t('The year displayed on the library card.'),
+    '#description' => t('Required for reports. Newsletters use the current issue year.'),
+    '#states' => array(
+      'visible' => array(':input[name="category"]' => array('value' => 'report')),
+    ),
+  );
+  $month_options = array('' => t('- Select issue month -'));
+  for ($month = 1; $month <= 12; $month++) {
+    $month_options[$month] = format_date(gmmktime(12, 0, 0, $month, 1, 2000), 'custom', 'F');
+  }
+  $form['publication_month'] = array(
+    '#type' => 'select', '#title' => t('Newsletter issue month'),
+    '#options' => $month_options,
+    '#default_value' => format_date(REQUEST_TIME, 'custom', 'n'),
+    '#states' => array(
+      'visible' => array(':input[name="category"]' => array('value' => 'newsletter')),
+    ),
+    '#description' => t('Select the month covered by this newsletter.'),
   );
   $form['pdf'] = array(
     '#type' => 'managed_file', '#title' => t('PDF file'), '#required' => TRUE,
@@ -98,8 +114,11 @@ function hive_documents_upload_form($form, &$form_state) {
 
 function hive_documents_upload_form_validate($form, &$form_state) {
   $year = $form_state['values']['year'];
-  if (!preg_match('/^\d{4}$/', $year) || (int) $year < 1900 || (int) $year > 2100) {
+  if ($form_state['values']['category'] === 'report' && (!preg_match('/^\d{4}$/', $year) || (int) $year < 1900 || (int) $year > 2100)) {
     form_set_error('year', t('Enter a valid four-digit publication year between 1900 and 2100.'));
+  }
+  if ($form_state['values']['category'] === 'newsletter' && ((int) $form_state['values']['publication_month'] < 1 || (int) $form_state['values']['publication_month'] > 12)) {
+    form_set_error('publication_month', t('Select the newsletter issue month.'));
   }
   if ($form_state['values']['category'] === 'report' && !in_array($form_state['values']['frequency'], array('monthly', 'quarterly', 'annual'), TRUE)) {
     form_set_error('frequency', t('Select whether this report is monthly, quarterly, or annual.'));
@@ -148,6 +167,7 @@ function hive_documents_upload_form_submit($form, &$form_state) {
     'filename' => $file->filename,
     'thumbnail_uri' => $thumbnail_uri,
     'year' => (int) $form_state['values']['year'],
+    'publication_month' => $category === 'newsletter' ? (int) $form_state['values']['publication_month'] : NULL,
     'frequency' => $frequency,
     'created' => REQUEST_TIME,
   ))->execute();
@@ -187,7 +207,7 @@ function hive_documents_page($category) {
     $frequency = hive_documents_frequency_label($row);
     $build['documents'][$row->id] = array(
       '#type' => 'container', '#attributes' => array('class' => array('hive-document-card')),
-      'card' => array('#markup' => '<a class="hive-document-card-link" href="' . check_url($preview_url) . '"><span class="hive-document-thumbnail">' . $image_markup . '</span><span class="hive-document-card-copy"><span class="hive-document-year">' . check_plain($row->year) . '</span><span class="hive-document-frequency">' . check_plain($frequency) . '</span><span class="hive-document-card-title">' . check_plain($row->title) . '</span></span></a>'),
+      'card' => array('#markup' => '<a class="hive-document-card-link" href="' . check_url($preview_url) . '"><span class="hive-document-thumbnail">' . $image_markup . '</span><span class="hive-document-card-copy"><span class="hive-document-year">' . check_plain(hive_documents_period_label($row)) . '</span><span class="hive-document-frequency">' . check_plain($frequency) . '</span><span class="hive-document-card-title">' . check_plain($row->title) . '</span></span></a>'),
     );
   }
   $build['#attached']['css'][] = drupal_get_path('module', 'hive_documents') . '/hive_documents.css';
@@ -206,6 +226,14 @@ function hive_documents_frequency_label($document) {
   return isset($labels[$document->frequency]) ? $labels[$document->frequency] : t('Frequency not specified');
 }
 
+function hive_documents_period_label($document) {
+  if ($document->category === 'newsletter' && !empty($document->publication_month)) {
+    $timestamp = gmmktime(12, 0, 0, (int) $document->publication_month, 1, (int) $document->year);
+    return format_date($timestamp, 'custom', 'F Y');
+  }
+  return $document->year;
+}
+
 function hive_documents_preview_access($id) {
   return is_numeric($id) && user_access('access content') && db_query('SELECT id FROM {hive_documents} WHERE id = :id', array(':id' => (int) $id))->fetchField();
 }
@@ -222,6 +250,6 @@ function hive_documents_preview_page($id) {
   }
   $pdf_url = file_create_url($document->uri);
   $build['#attached']['css'][] = drupal_get_path('module', 'hive_documents') . '/hive_documents.css';
-  $build['preview'] = array('#markup' => '<article class="hive-document-preview-page"><p class="hive-document-kicker">' . check_plain($document->year) . ' · ' . check_plain(hive_documents_frequency_label($document)) . '</p><h1>' . check_plain($document->title) . '</h1>' . (!empty($document->description) ? '<p class="hive-document-description">' . nl2br(check_plain($document->description)) . '</p>' : '') . '<p><a class="btn btn-primary" href="' . check_url($pdf_url) . '" download="' . check_plain($document->filename) . '">' . t('Download PDF') . '</a></p><iframe src="' . check_url($pdf_url) . '#toolbar=0" title="' . check_plain(t('Preview: @title', array('@title' => $document->title))) . '"></iframe></article>');
+  $build['preview'] = array('#markup' => '<article class="hive-document-preview-page"><p class="hive-document-kicker">' . check_plain(hive_documents_period_label($document)) . ' · ' . check_plain(hive_documents_frequency_label($document)) . '</p><h1>' . check_plain($document->title) . '</h1>' . (!empty($document->description) ? '<p class="hive-document-description">' . nl2br(check_plain($document->description)) . '</p>' : '') . '<p><a class="btn btn-primary" href="' . check_url($pdf_url) . '" download="' . check_plain($document->filename) . '">' . t('Download PDF') . '</a></p><iframe src="' . check_url($pdf_url) . '#toolbar=0" title="' . check_plain(t('Preview: @title', array('@title' => $document->title))) . '"></iframe></article>');
   return $build;
 }

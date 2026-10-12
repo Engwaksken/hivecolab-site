@@ -40,14 +40,27 @@ function hive_documents_menu() {
     'page arguments' => array('hive_documents_upload_form'),
     'access arguments' => array('upload hive documents'), 'type' => MENU_LOCAL_ACTION,
   );
+  $items['admin/content/hive-documents/add-newsletter'] = array(
+    'title' => 'Add newsletter', 'page callback' => 'drupal_get_form',
+    'page arguments' => array('hive_documents_upload_form', 'newsletter'),
+    'access arguments' => array('upload hive documents'),
+    'type' => MENU_LOCAL_ACTION, 'parent' => 'admin/content', 'weight' => 5,
+  );
+  $items['admin/content/hive-documents/add-report'] = array(
+    'title' => 'Add report', 'page callback' => 'drupal_get_form',
+    'page arguments' => array('hive_documents_upload_form', 'report'),
+    'access arguments' => array('upload hive documents'),
+    'type' => MENU_LOCAL_ACTION, 'parent' => 'admin/content', 'weight' => 6,
+  );
   return $items;
 }
 
-function hive_documents_upload_form($form, &$form_state) {
+function hive_documents_upload_form($form, &$form_state, $default_category = NULL) {
   $form['title'] = array('#type' => 'textfield', '#title' => t('Title'), '#required' => TRUE, '#maxlength' => 255);
   $form['category'] = array(
     '#type' => 'select', '#title' => t('Document type'), '#required' => TRUE,
     '#options' => array('newsletter' => t('Newsletter'), 'report' => t('Report')),
+    '#default_value' => $default_category === 'report' ? 'report' : 'newsletter',
   );
   $form['frequency'] = array(
     '#type' => 'select', '#title' => t('Report frequency'),

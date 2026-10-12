@@ -1261,9 +1261,23 @@ h2.big-text {
 .view-opportunities.view-display-id-block_1 .view-content,
 .block-views-blockopportunities-block-1 .view-content {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 2rem;
   padding: 2rem 0;
+}
+
+@media (max-width: 991px) {
+  .view-opportunities.view-display-id-block_1 .view-content,
+  .block-views-blockopportunities-block-1 .view-content {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 575px) {
+  .view-opportunities.view-display-id-block_1 .view-content,
+  .block-views-blockopportunities-block-1 .view-content {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Grid Card */
@@ -1505,7 +1519,7 @@ h2.big-text {
 }
 
 /* Remove default field wrapper styles */
-.opportunity-hero-wrapper .field--name-field-featured-image {
+.opportunity-hero-wrapper .field-name-field-featured-image {
   height: 100%;
   margin: 0;
   line-height: 0;

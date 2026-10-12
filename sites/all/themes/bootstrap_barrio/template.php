@@ -11,14 +11,13 @@
  * Define the variable to activate responsive behaivor.
  */
 function bootstrap_barrio_preprocess_html(&$variables) {
-  // Use the bundled theme icon explicitly; the site's root-level Drupal
-  // favicon path is missing on some deployments.
-  $favicon = drupal_get_path('theme', 'bootstrap') . '/favicon.ico';
+  // Use Hive Colab's branded icon instead of the base theme's Drupal icon.
+  $favicon = drupal_get_path('theme', 'bootstrap_barrio') . '/favicon.png';
   if (file_exists(DRUPAL_ROOT . '/' . $favicon)) {
     drupal_add_html_head_link(array(
       'rel' => 'icon',
-      'type' => 'image/x-icon',
-      'href' => base_path() . $favicon . '?v=2',
+      'type' => 'image/png',
+      'href' => base_path() . $favicon . '?v=3',
     ), TRUE);
   }
   if (arg(0) == 'taxonomy') {
@@ -36,6 +35,30 @@ function bootstrap_barrio_preprocess_html(&$variables) {
     $variables['mobile_friendly'] = FALSE;
     drupal_add_css(drupal_get_path('theme', 'bootstrap_barrio') . '/css/no-responsive.css', array('group' => CSS_DEFAULT, 'every_page' => TRUE));
   }
+}
+
+/**
+ * Ensure opportunity featured images appear on the full opportunity page.
+ */
+function bootstrap_barrio_preprocess_node(&$variables) {
+  if ($variables['type'] !== 'opportunity' || empty($variables['page'])) {
+    return;
+  }
+
+  $node = $variables['node'];
+  if (empty($node->field_featured_image)) {
+    return;
+  }
+
+  $image = field_view_field('node', $node, 'field_featured_image', array('label' => 'hidden'));
+  if (!$image) {
+    return;
+  }
+
+  $image['#prefix'] = '<div class="opportunity-hero-wrapper">';
+  $image['#suffix'] = '</div>';
+  $image['#weight'] = -100;
+  $variables['content']['field_featured_image'] = $image;
 }
 
 /**

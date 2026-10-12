@@ -52,6 +52,22 @@ function hive_documents_menu() {
     'access arguments' => array('upload hive documents'),
     'type' => MENU_LOCAL_ACTION, 'parent' => 'admin/content', 'weight' => 6,
   );
+  $items['node/add/hive-newsletter'] = array(
+    'title' => 'Newsletter',
+    'description' => 'Upload a monthly Hive Colab newsletter PDF.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('hive_documents_upload_form', 'newsletter'),
+    'access arguments' => array('upload hive documents'),
+    'type' => MENU_NORMAL_ITEM, 'parent' => 'node/add', 'weight' => 50,
+  );
+  $items['node/add/hive-report'] = array(
+    'title' => 'Report',
+    'description' => 'Upload a monthly, quarterly, or annual Hive Colab report PDF.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('hive_documents_upload_form', 'report'),
+    'access arguments' => array('upload hive documents'),
+    'type' => MENU_NORMAL_ITEM, 'parent' => 'node/add', 'weight' => 51,
+  );
   return $items;
 }
 

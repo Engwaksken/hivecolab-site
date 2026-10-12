@@ -1,0 +1,104 @@
+<?php
+
+/**
+ * @file
+ * Public PDF libraries for newsletters and reports.
+ */
+
+function hive_documents_permission() {
+  return array(
+    'upload hive documents' => array(
+      'title' => t('Upload newsletters and reports'),
+      'description' => t('Add PDF documents to the public document libraries.'),
+      'restrict access' => TRUE,
+    ),
+  );
+}
+
+function hive_documents_menu() {
+  $items['newsletters'] = array(
+    'title' => 'Newsletters', 'page callback' => 'hive_documents_page',
+    'page arguments' => array('newsletter'), 'access arguments' => array('access content'),
+    'type' => MENU_NORMAL_ITEM, 'file' => 'hive_documents.module',
+  );
+  $items['reports'] = array(
+    'title' => 'Reports', 'page callback' => 'hive_documents_page',
+    'page arguments' => array('report'), 'access arguments' => array('access content'),
+    'type' => MENU_NORMAL_ITEM, 'file' => 'hive_documents.module',
+  );
+  $items['admin/content/hive-documents/add'] = array(
+    'title' => 'Upload newsletter or report', 'page callback' => 'drupal_get_form',
+    'page arguments' => array('hive_documents_upload_form'),
+    'access arguments' => array('upload hive documents'), 'type' => MENU_LOCAL_ACTION,
+  );
+  return $items;
+}
+
+function hive_documents_upload_form($form, &$form_state) {
+  $form['title'] = array('#type' => 'textfield', '#title' => t('Title'), '#required' => TRUE, '#maxlength' => 255);
+  $form['category'] = array(
+    '#type' => 'select', '#title' => t('Document type'), '#required' => TRUE,
+    '#options' => array('newsletter' => t('Newsletter'), 'report' => t('Report')),
+  );
+  $form['description'] = array('#type' => 'textarea', '#title' => t('Description'));
+  $form['pdf'] = array(
+    '#type' => 'managed_file', '#title' => t('PDF file'), '#required' => TRUE,
+    '#upload_location' => 'public://hive-documents/', '#upload_validators' => array(
+      'file_validate_extensions' => array('pdf'), 'file_validate_size' => array(20 * 1024 * 1024),
+    ),
+    '#description' => t('PDF only, up to 20 MB.'),
+  );
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Publish document'));
+  return $form;
+}
+
+function hive_documents_upload_form_submit($form, &$form_state) {
+  $fid = $form_state['values']['pdf'];
+  $file = file_load($fid);
+  $realpath = $file ? drupal_realpath($file->uri) : FALSE;
+  $handle = $realpath ? @fopen($realpath, 'rb') : FALSE;
+  $signature = $handle ? fread($handle, 5) : '';
+  if ($handle) {
+    fclose($handle);
+  }
+  if (!$file || strtolower(pathinfo($file->filename, PATHINFO_EXTENSION)) !== 'pdf' || $signature !== '%PDF-') {
+    form_set_error('pdf', t('Please upload a valid PDF file.'));
+    return;
+  }
+  $file->status = FILE_STATUS_PERMANENT;
+  file_save($file);
+  db_insert('hive_documents')->fields(array(
+    'title' => $form_state['values']['title'],
+    'description' => $form_state['values']['description'],
+    'category' => $form_state['values']['category'],
+    'uri' => $file->uri,
+    'filename' => $file->filename,
+    'created' => REQUEST_TIME,
+  ))->execute();
+  drupal_set_message(t('The document has been published.'));
+  $form_state['redirect'] = $form_state['values']['category'] === 'newsletter' ? 'newsletters' : 'reports';
+}
+
+function hive_documents_page($category) {
+  $is_newsletter = $category === 'newsletter';
+  $title = $is_newsletter ? t('Newsletters') : t('Reports');
+  drupal_set_title($title);
+  $build['intro'] = array('#markup' => '<div class="hive-documents-intro"><p>' . check_plain($is_newsletter ? t('Stories, updates and news from the Hive Colab community.') : t('Research, insights and publications from Hive Colab.') ) . '</p></div>');
+  if (user_access('upload hive documents')) {
+    $build['upload'] = array('#markup' => '<p class="hive-documents-upload"><a class="btn btn-primary" href="' . check_url(url('admin/content/hive-documents/add')) . '">' . t('Upload a document') . '</a></p>');
+  }
+  $rows = db_select('hive_documents', 'd')->fields('d')
+    ->condition('category', $category)->orderBy('created', 'DESC')->execute()->fetchAll();
+  if (!$rows) {
+    $build['empty'] = array('#markup' => '<div class="hive-documents-empty"><h2>' . t('Coming soon') . '</h2><p>' . t('There are no documents here yet. Please check back soon.') . '</p></div>');
+  }
+  foreach ($rows as $row) {
+    $url = file_create_url($row->uri);
+    $build['documents'][$row->id] = array(
+      '#type' => 'container', '#attributes' => array('class' => array('hive-document-card')),
+      'details' => array('#markup' => '<div class="hive-document-details"><span class="hive-document-kicker">' . ($is_newsletter ? t('Newsletter') : t('Report')) . ' · ' . format_date($row->created, 'custom', 'F Y') . '</span><h2>' . check_plain($row->title) . '</h2>' . (!empty($row->description) ? '<p>' . nl2br(check_plain($row->description)) . '</p>' : '') . '<a class="btn btn-primary" href="' . check_url($url) . '" download="' . check_plain($row->filename) . '">' . t('Download PDF') . '</a></div><div class="hive-document-preview"><iframe src="' . check_url($url) . '#toolbar=0" title="' . check_plain(t('Preview: @title', array('@title' => $row->title))) . '" loading="lazy"></iframe><a class="hive-document-preview-link" href="' . check_url($url) . '" target="_blank" rel="noopener">' . t('Open full preview') . '</a></div>'),
+    );
+  }
+  $build['#attached']['css'][] = drupal_get_path('module', 'hive_documents') . '/hive_documents.css';
+  return $build;
+}

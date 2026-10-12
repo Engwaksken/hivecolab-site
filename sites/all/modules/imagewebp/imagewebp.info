@@ -1,0 +1,12 @@
+name = ImageWebP
+description = Modern image format that provides superior lossless and lossy compression for images.
+dependencies[] = image
+dependencies[] = field_formatter_settings
+package = Webp
+core = "7.x"
+
+; Information added by Drupal.org packaging script on 2019-05-14
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "imagewebp"
+datestamp = "1557825187"

@@ -1,0 +1,4 @@
+[25-Jul-2024 18:27:25 UTC] PHP Fatal error:  Uncaught Error: Class 'DrupalWebTestCase' not found in /home/yf2tvh4jslia/public_html/modules/simpletest/tests/psr_0_test/lib/Drupal/psr_0_test/Tests/ExampleTest.php:5
+Stack trace:
+#0 {main}
+  thrown in /home/yf2tvh4jslia/public_html/modules/simpletest/tests/psr_0_test/lib/Drupal/psr_0_test/Tests/ExampleTest.php on line 5

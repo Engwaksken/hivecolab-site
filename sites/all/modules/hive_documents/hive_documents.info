@@ -1,0 +1,5 @@
+name = Hive documents
+description = Newsletter and report PDF library with previews and downloads.
+core = 7.x
+package = Hive Colab
+files[] = hive_documents.module

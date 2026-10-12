@@ -1,0 +1,8 @@
+[21-Jul-2024 19:35:45 UTC] PHP Fatal error:  Uncaught Error: Class 'views_plugin_query' not found in /home/yf2tvh4jslia/public_html/sites/all/modules/entity/views/entity_views_example_query.php:20
+Stack trace:
+#0 {main}
+  thrown in /home/yf2tvh4jslia/public_html/sites/all/modules/entity/views/entity_views_example_query.php on line 20
+[21-Jul-2024 19:36:40 UTC] PHP Fatal error:  Uncaught Error: Class 'views_plugin_query' not found in /home/yf2tvh4jslia/public_html/sites/all/modules/entity/views/entity_views_example_query.php:20
+Stack trace:
+#0 {main}
+  thrown in /home/yf2tvh4jslia/public_html/sites/all/modules/entity/views/entity_views_example_query.php on line 20

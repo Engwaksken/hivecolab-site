@@ -1,0 +1,152 @@
+<?php
+
+/**
+ * @file
+ * Drupal Module: Bootstrap menu items.
+ *
+ * @author: Alexander Hass <http://drupal.org/user/85918>
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function bootstrap_menu_items_menu() {
+  $items['<nolink>'] = array(
+    'page callback' => 'bootstrap_menu_items_page_callback',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  $items['<header>'] = array(
+    'page callback' => 'bootstrap_menu_items_page_callback',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  $items['<separator>'] = array(
+    'page callback' => 'bootstrap_menu_items_page_callback',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Page callback for bootstrap menu items.
+ *
+ * Page callback functions wanting to report a "page not found" message should
+ * return MENU_NOT_FOUND instead of calling drupal_not_found(). However,
+ * functions that are invoked in contexts where that return value might not
+ * bubble up to menu_execute_active_handler() should call drupal_not_found().
+ *
+ * Simply returns MENU_NOT_FOUND. We can't use drupal_not_found() as page
+ * callback since this would lead to calling drupal_deliver_page() twice.
+ *
+ * @return int
+ *   The MENU_NOT_FOUND status code.
+ */
+function bootstrap_menu_items_page_callback() {
+  return MENU_NOT_FOUND;
+}
+
+/**
+ * Implements MODULE_preprocess_HOOK().
+ *
+ * Adds appropriate attributes to the list item.
+ *
+ * @see theme_menu_link()
+ */
+function bootstrap_menu_items_preprocess_menu_link(&$variables) {
+  // Add CSS classes to LI element.
+  $paths = array(
+    '<header>',
+    '<separator>',
+  );
+  if (in_array($variables['element']['#href'], $paths)) {
+    switch ($variables['element']['#href']) {
+      case '<header>':
+        $variables['element']['#attributes']['class'][] = 'dropdown-header';
+        break;
+
+      case '<separator>':
+        $variables['element']['#attributes']['class'][] = 'divider';
+        $variables['element']['#attributes']['role'][] = 'separator';
+        break;
+    }
+  }
+}
+
+/**
+ * Override of theme_link().
+ *
+ * This function will render link if it is "header" or "separator". Otherwise
+ * it will call originally overwritten menu_item_link function.
+ */
+function bootstrap_menu_items_link(array $variables) {
+  $paths = array(
+    '<nolink>',
+    '<header>',
+    '<separator>',
+  );
+  if (in_array($variables['path'], $paths)) {
+    switch ($variables['path']) {
+      case '<nolink>':
+        // Set empty fragment '#' as link.
+        $variables['options']['attributes']['class'][] = 'nolink';
+        $variables['options']['external'] = TRUE;
+        $variables['options']['fragment'] = FALSE;
+        $link = l($variables['text'], NULL, $variables['options']);
+        break;
+
+      case '<header>':
+        $link = check_plain($variables['text']);
+        break;
+
+      case '<separator>':
+        // Empty "menu link title" may confuse users in menu administration.
+        // The text is hidden, so no problem.
+        $link = check_plain($variables['text']);
+        break;
+    }
+
+    return $link;
+  }
+
+  // Call the original theme function for normal menu link.
+  return theme('bootstrap_menu_items_link_default', $variables);
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * We replace theme_menu_item_link with our own function.
+ */
+function bootstrap_menu_items_theme_registry_alter(&$registry) {
+  // Save previous value from registry in case another theme overwrites
+  // menu_item_link.
+  $registry['bootstrap_menu_items_link_default'] = $registry['link'];
+  $registry['link']['function'] = 'bootstrap_menu_items_link';
+}
+
+/**
+ * Implements hook_form_FROM_ID_alter().
+ */
+function bootstrap_menu_items_form_menu_edit_item_alter(&$form, &$form_state) {
+  // Some menu items have a pre-defined path which cannot be modified hence no
+  // default_value.
+  if (isset($form['link_path']['#default_value'])) {
+    $default_value = $form['link_path']['#default_value'];
+
+    if (preg_match('/^<nolink>\/[0-9]+$/', $default_value)) {
+      $default_value = '<nolink>';
+    }
+    elseif (preg_match('/^<header>\/[0-9]+$/', $default_value)) {
+      $default_value = '<header>';
+    }
+    elseif (preg_match('/^<separator>\/[0-9]+$/', $default_value)) {
+      $default_value = '<separator>';
+    }
+
+    $form['link_path']['#default_value'] = $default_value;
+    $form['link_path']['#description'] .= ' ' . t('Enter "%nolink" to generate non-linkable menu item, enter "%header" to generate a header item and "%separator" to generate a divider item.', array('%nolink' => '<nolink>', '%header' => '<header>', '%separator' => '<separator>'));
+  }
+}

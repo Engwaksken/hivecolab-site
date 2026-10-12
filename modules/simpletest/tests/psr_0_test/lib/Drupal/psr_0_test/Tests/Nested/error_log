@@ -1,0 +1,4 @@
+[04-Aug-2024 00:20:27 UTC] PHP Fatal error:  Uncaught Error: Class 'DrupalWebTestCase' not found in /home/yf2tvh4jslia/public_html/modules/simpletest/tests/psr_0_test/lib/Drupal/psr_0_test/Tests/Nested/NestedExampleTest.php:5
+Stack trace:
+#0 {main}
+  thrown in /home/yf2tvh4jslia/public_html/modules/simpletest/tests/psr_0_test/lib/Drupal/psr_0_test/Tests/Nested/NestedExampleTest.php on line 5

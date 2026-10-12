@@ -1,0 +1,142 @@
+<?php
+
+/**
+ * @file
+ * Module file for generating webp image.
+ */
+
+// Load all Field module hooks for Imagewebp.
+require_once drupal_get_path('module', 'imagewebp') . '/imagewebp.field.inc';
+
+/**
+ * Callback for generate webp image.
+ */
+function createwebpimage($file) {
+  $uri = $file->uri;
+  $url = file_create_url($uri);
+  $pathinfo = pathinfo($url, PATHINFO_FILENAME);
+  $file_path = realpath($_SERVER['DOCUMENT_ROOT'] . parse_url($url, PHP_URL_PATH));
+  $dirpath = dirname($file_path) . "\\" . $pathinfo . ".webp";
+  $webpUrl = image_create_from_any($url);
+  $imagewebp = imagewebp($webpUrl, $dirpath);
+  return $imagewebp;
+}
+
+/**
+ * Returns an image identifier representing a blank image of specified size.
+ */
+function image_create_from_any($filepath) {
+  // You can use getImageSize()
+  $type = exif_imagetype($filepath);
+  // 1->gif, 2->jpg, 3->png, 6->bmp.
+  $allowed_types = array(
+    1,
+    2,
+    3,
+    6,
+  );
+  if (!in_array($type, $allowed_types)) {
+    return FALSE;
+  }
+  switch ($type) {
+    case 1:
+      $im = imagecreatefromgif($filepath);
+      break;
+
+    case 2:
+      $im = imagecreatefromjpeg($filepath);
+      break;
+
+    case 3:
+      $im = imagecreatefrompng($filepath);
+      break;
+
+    case 6:
+      $im = imagecreatefrombmp($filepath);
+      break;
+  }
+  return $im;
+}
+
+/**
+ * Implements hook_field_display_alter().
+ */
+function imagewebp_field_display_alter(&$display, $context) {
+  if ((isset($_SERVER['HTTP_ACCEPT']) === TRUE) && (strstr($_SERVER['HTTP_ACCEPT'], 'image/webp') !== FALSE) && $display['type'] == 'image') {
+    $content = field_info_instances("node", $context['entity']->type);
+    $field_name = $context['instance']['field_name'];
+    foreach ($content as $key => $value) {
+      $support = $display['settings']['webp_support'];
+      if (!$support) {
+        $path = $context['entity']->{$key}['und'][0]['uri'];
+        $filename = preg_replace('"\.(bmp|gif|png|jpg)$"', '.webp', $path);
+        if (file_exists($filename)) {
+          $context['entity']->{$key}['und'][0]['uri'] = $filename;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_field().
+ */
+function imagewebp_preprocess_field(&$variables) {
+  // Provide an extra variable to the field template when the field uses
+  // a formatter of type 'image'.
+  if ($variables['element']['#formatter'] == 'image') {
+    $entity_type = $variables['element']['#entity_type'];
+    $field_name  = $variables['element']['#field_name'];
+    $bundle      = $variables['element']['#bundle'];
+    $view_mode   = $variables['element']['#view_mode'];
+
+    $formatter_settings = field_formatter_settings_get_instance_display_settings($entity_type, $field_name, $bundle, $view_mode);
+    // Make the setting available in the field template.
+    $variables['webp_support'] = $formatter_settings['webp_support'];
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function imagewebp_form_field_ui_display_overview_form_alter(&$form, &$form_state) {
+  $form['actions']['submit']['#submit'][] = '_imagewebp_custom_submit';
+}
+
+/**
+ * Callback for hook_form_alter() submit.
+ */
+function _imagewebp_custom_submit($form, &$form_state) {
+  $fields = get_field_entity($form['#entity_type'], $form['#bundle']);
+  $nodes = node_load_multiple(array(), array('type' => $form['#bundle']));
+  $test = array();
+  foreach ($fields as $key => $value) {
+    $formatter_settings = $form_state['formatter_settings'];
+    if (isset($formatter_settings[$value]) && $formatter_settings[$value]['webp_support']) {
+      foreach ($nodes as $k => $v) {
+        $fid = $v->{$value}['und'][0]['fid'];
+        if (isset($fid) && $fid != 0) {
+          $file = file_load($fid);
+          if ($file) {
+            $test[] = $fid;
+            $response = createwebpimage($file);
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Returns fields of type image.
+ */
+function get_field_entity($node, $type) {
+  $field_entity = field_info_instances($node, $type);
+  $field_image = array();
+  foreach ($field_entity as $key => $value) {
+    if ($value['widget']['module'] == 'image') {
+      $field_image[] = $key;
+    }
+  }
+  return $field_image;
+}

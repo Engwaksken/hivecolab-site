@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function hive_documents_schema() {
+  $schema['hive_documents'] = array(
+    'description' => 'Uploaded newsletter and report PDFs.',
+    'fields' => array(
+      'id' => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE),
+      'title' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
+      'description' => array('type' => 'text', 'not null' => FALSE),
+      'category' => array('type' => 'varchar', 'length' => 20, 'not null' => TRUE),
+      'uri' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
+      'filename' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
+      'created' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
+    ),
+    'primary key' => array('id'),
+    'indexes' => array('category' => array('category'), 'created' => array('created')),
+  );
+  return $schema;
+}

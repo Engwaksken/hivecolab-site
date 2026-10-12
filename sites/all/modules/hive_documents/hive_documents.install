@@ -13,10 +13,35 @@ function hive_documents_schema() {
       'category' => array('type' => 'varchar', 'length' => 20, 'not null' => TRUE),
       'uri' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
       'filename' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
+      'thumbnail_uri' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE),
+      'year' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
       'created' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
     ),
     'primary key' => array('id'),
     'indexes' => array('category' => array('category'), 'created' => array('created')),
   );
   return $schema;
+}
+
+/**
+ * Add thumbnail and publication year fields to existing installations.
+ */
+function hive_documents_update_7001() {
+  if (!db_field_exists('hive_documents', 'thumbnail_uri')) {
+    db_add_field('hive_documents', 'thumbnail_uri', array(
+      'type' => 'varchar', 'length' => 255, 'not null' => FALSE,
+    ));
+  }
+  if (!db_field_exists('hive_documents', 'year')) {
+    db_add_field('hive_documents', 'year', array(
+      'type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0,
+    ));
+    $documents = db_select('hive_documents', 'd')->fields('d', array('id', 'created'))->execute();
+    foreach ($documents as $document) {
+      db_update('hive_documents')->fields(array(
+        'year' => (int) format_date($document->created, 'custom', 'Y'),
+      ))->condition('id', $document->id)->execute();
+    }
+  }
+  return t('Added document thumbnails and publication years.');
 }

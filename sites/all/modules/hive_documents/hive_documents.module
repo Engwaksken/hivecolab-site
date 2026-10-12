@@ -26,6 +26,15 @@ function hive_documents_menu() {
     'page arguments' => array('report'), 'access arguments' => array('access content'),
     'type' => MENU_NORMAL_ITEM, 'file' => 'hive_documents.module',
   );
+  $items['hive-document/%'] = array(
+    'title callback' => 'hive_documents_preview_title',
+    'title arguments' => array(1),
+    'page callback' => 'hive_documents_preview_page',
+    'page arguments' => array(1),
+    'access callback' => 'hive_documents_preview_access',
+    'access arguments' => array(1),
+    'type' => MENU_CALLBACK,
+  );
   $items['admin/content/hive-documents/add'] = array(
     'title' => 'Upload newsletter or report', 'page callback' => 'drupal_get_form',
     'page arguments' => array('hive_documents_upload_form'),
@@ -41,6 +50,11 @@ function hive_documents_upload_form($form, &$form_state) {
     '#options' => array('newsletter' => t('Newsletter'), 'report' => t('Report')),
   );
   $form['description'] = array('#type' => 'textarea', '#title' => t('Description'));
+  $form['year'] = array(
+    '#type' => 'textfield', '#title' => t('Publication year'), '#required' => TRUE,
+    '#default_value' => format_date(REQUEST_TIME, 'custom', 'Y'), '#maxlength' => 4,
+    '#description' => t('The year displayed on the library card.'),
+  );
   $form['pdf'] = array(
     '#type' => 'managed_file', '#title' => t('PDF file'), '#required' => TRUE,
     '#upload_location' => 'public://hive-documents/', '#upload_validators' => array(
@@ -48,8 +62,32 @@ function hive_documents_upload_form($form, &$form_state) {
     ),
     '#description' => t('PDF only, up to 20 MB.'),
   );
+  $image_validators = array(
+    'file_validate_extensions' => array('png gif jpg jpeg webp'),
+    'file_validate_is_image' => array(),
+    'file_validate_size' => array(8 * 1024 * 1024),
+  );
+  $form['thumbnail'] = array(
+    '#type' => 'managed_file', '#title' => t('Thumbnail image'),
+    '#upload_location' => 'public://hive-documents/images/',
+    '#upload_validators' => $image_validators,
+    '#description' => t('Optional cover image for this document, up to 8 MB.'),
+  );
+  $form['banner'] = array(
+    '#type' => 'managed_file', '#title' => t('Replace this library page banner'),
+    '#upload_location' => 'public://hive-documents/banners/',
+    '#upload_validators' => $image_validators,
+    '#description' => t('Optional. Uploading an image updates the banner for the selected document type.'),
+  );
   $form['submit'] = array('#type' => 'submit', '#value' => t('Publish document'));
   return $form;
+}
+
+function hive_documents_upload_form_validate($form, &$form_state) {
+  $year = $form_state['values']['year'];
+  if (!preg_match('/^\d{4}$/', $year) || (int) $year < 1900 || (int) $year > 2100) {
+    form_set_error('year', t('Enter a valid four-digit publication year between 1900 and 2100.'));
+  }
 }
 
 function hive_documents_upload_form_submit($form, &$form_state) {
@@ -67,12 +105,32 @@ function hive_documents_upload_form_submit($form, &$form_state) {
   }
   $file->status = FILE_STATUS_PERMANENT;
   file_save($file);
+  $thumbnail_uri = NULL;
+  if (!empty($form_state['values']['thumbnail'])) {
+    $thumbnail = file_load($form_state['values']['thumbnail']);
+    if ($thumbnail) {
+      $thumbnail->status = FILE_STATUS_PERMANENT;
+      file_save($thumbnail);
+      $thumbnail_uri = $thumbnail->uri;
+    }
+  }
+  $category = $form_state['values']['category'];
+  if (!empty($form_state['values']['banner'])) {
+    $banner = file_load($form_state['values']['banner']);
+    if ($banner) {
+      $banner->status = FILE_STATUS_PERMANENT;
+      file_save($banner);
+      variable_set('hive_documents_banner_' . $category, $banner->uri);
+    }
+  }
   db_insert('hive_documents')->fields(array(
     'title' => $form_state['values']['title'],
     'description' => $form_state['values']['description'],
-    'category' => $form_state['values']['category'],
+    'category' => $category,
     'uri' => $file->uri,
     'filename' => $file->filename,
+    'thumbnail_uri' => $thumbnail_uri,
+    'year' => (int) $form_state['values']['year'],
     'created' => REQUEST_TIME,
   ))->execute();
   drupal_set_message(t('The document has been published.'));
@@ -82,7 +140,11 @@ function hive_documents_upload_form_submit($form, &$form_state) {
 function hive_documents_page($category) {
   $is_newsletter = $category === 'newsletter';
   $title = $is_newsletter ? t('Newsletters') : t('Reports');
-  drupal_set_title($title);
+  $banner_uri = variable_get('hive_documents_banner_' . $category);
+  drupal_set_title($banner_uri ? '' : $title);
+  if ($banner_uri) {
+    $build['banner'] = array('#markup' => '<div class="hive-documents-banner" style="background-image:url(' . check_url(file_create_url($banner_uri)) . ')"><div class="hive-documents-banner-shade"></div><h1>' . check_plain($title) . '</h1></div>');
+  }
   $build['intro'] = array('#markup' => '<div class="hive-documents-intro"><p>' . check_plain($is_newsletter ? t('Stories, updates and news from the Hive Colab community.') : t('Research, insights and publications from Hive Colab.') ) . '</p></div>');
   if (user_access('upload hive documents')) {
     $build['upload'] = array('#markup' => '<p class="hive-documents-upload"><a class="btn btn-primary" href="' . check_url(url('admin/content/hive-documents/add')) . '">' . t('Upload a document') . '</a></p>');
@@ -92,13 +154,43 @@ function hive_documents_page($category) {
   if (!$rows) {
     $build['empty'] = array('#markup' => '<div class="hive-documents-empty"><h2>' . t('Coming soon') . '</h2><p>' . t('There are no documents here yet. Please check back soon.') . '</p></div>');
   }
+  else {
+    $build['documents'] = array(
+      '#type' => 'container',
+      '#attributes' => array('class' => array('hive-documents-grid')),
+    );
+  }
   foreach ($rows as $row) {
-    $url = file_create_url($row->uri);
+    $preview_url = url('hive-document/' . $row->id);
+    $thumbnail = !empty($row->thumbnail_uri) ? file_create_url($row->thumbnail_uri) : '';
+    $image_markup = $thumbnail
+      ? '<img src="' . check_url($thumbnail) . '" alt="' . check_plain($row->title) . '" loading="lazy">'
+      : '<span class="hive-document-placeholder" aria-hidden="true">PDF</span>';
     $build['documents'][$row->id] = array(
       '#type' => 'container', '#attributes' => array('class' => array('hive-document-card')),
-      'details' => array('#markup' => '<div class="hive-document-details"><span class="hive-document-kicker">' . ($is_newsletter ? t('Newsletter') : t('Report')) . ' · ' . format_date($row->created, 'custom', 'F Y') . '</span><h2>' . check_plain($row->title) . '</h2>' . (!empty($row->description) ? '<p>' . nl2br(check_plain($row->description)) . '</p>' : '') . '<a class="btn btn-primary" href="' . check_url($url) . '" download="' . check_plain($row->filename) . '">' . t('Download PDF') . '</a></div><div class="hive-document-preview"><iframe src="' . check_url($url) . '#toolbar=0" title="' . check_plain(t('Preview: @title', array('@title' => $row->title))) . '" loading="lazy"></iframe><a class="hive-document-preview-link" href="' . check_url($url) . '" target="_blank" rel="noopener">' . t('Open full preview') . '</a></div>'),
+      'card' => array('#markup' => '<a class="hive-document-card-link" href="' . check_url($preview_url) . '"><span class="hive-document-thumbnail">' . $image_markup . '</span><span class="hive-document-card-copy"><span class="hive-document-year">' . check_plain($row->year) . '</span><span class="hive-document-card-title">' . check_plain($row->title) . '</span></span></a>'),
     );
   }
   $build['#attached']['css'][] = drupal_get_path('module', 'hive_documents') . '/hive_documents.css';
+  return $build;
+}
+
+function hive_documents_preview_access($id) {
+  return is_numeric($id) && user_access('access content') && db_query('SELECT id FROM {hive_documents} WHERE id = :id', array(':id' => (int) $id))->fetchField();
+}
+
+function hive_documents_preview_title($id) {
+  $document = db_select('hive_documents', 'd')->fields('d', array('title'))->condition('id', (int) $id)->execute()->fetchObject();
+  return $document ? $document->title : t('Document preview');
+}
+
+function hive_documents_preview_page($id) {
+  $document = db_select('hive_documents', 'd')->fields('d')->condition('id', (int) $id)->execute()->fetchObject();
+  if (!$document) {
+    return MENU_NOT_FOUND;
+  }
+  $pdf_url = file_create_url($document->uri);
+  $build['#attached']['css'][] = drupal_get_path('module', 'hive_documents') . '/hive_documents.css';
+  $build['preview'] = array('#markup' => '<article class="hive-document-preview-page"><p class="hive-document-kicker">' . check_plain($document->year) . '</p><h1>' . check_plain($document->title) . '</h1>' . (!empty($document->description) ? '<p class="hive-document-description">' . nl2br(check_plain($document->description)) . '</p>' : '') . '<p><a class="btn btn-primary" href="' . check_url($pdf_url) . '" download="' . check_plain($document->filename) . '">' . t('Download PDF') . '</a></p><iframe src="' . check_url($pdf_url) . '#toolbar=0" title="' . check_plain(t('Preview: @title', array('@title' => $document->title))) . '"></iframe></article>');
   return $build;
 }

@@ -11,6 +11,16 @@
  * Define the variable to activate responsive behaivor.
  */
 function bootstrap_barrio_preprocess_html(&$variables) {
+  // Use the bundled theme icon explicitly; the site's root-level Drupal
+  // favicon path is missing on some deployments.
+  $favicon = drupal_get_path('theme', 'bootstrap') . '/favicon.ico';
+  if (file_exists(DRUPAL_ROOT . '/' . $favicon)) {
+    drupal_add_html_head_link(array(
+      'rel' => 'icon',
+      'type' => 'image/x-icon',
+      'href' => base_path() . $favicon . '?v=2',
+    ), TRUE);
+  }
   if (arg(0) == 'taxonomy') {
     $tid = arg(2);
     $taxonomy = taxonomy_term_load($tid);
@@ -91,4 +101,3 @@ function _bootstrap_barrio_block_list($region) {
   }
   return $drupal_list;
 }
-

@@ -15,6 +15,7 @@ function hive_documents_schema() {
       'filename' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
       'thumbnail_uri' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE),
       'year' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+      'frequency' => array('type' => 'varchar', 'length' => 20, 'not null' => FALSE),
       'created' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
     ),
     'primary key' => array('id'),
@@ -44,4 +45,20 @@ function hive_documents_update_7001() {
     }
   }
   return t('Added document thumbnails and publication years.');
+}
+
+/**
+ * Store newsletter/report publication frequency.
+ */
+function hive_documents_update_7002() {
+  if (!db_field_exists('hive_documents', 'frequency')) {
+    db_add_field('hive_documents', 'frequency', array(
+      'type' => 'varchar', 'length' => 20, 'not null' => FALSE,
+    ));
+  }
+  db_update('hive_documents')
+    ->fields(array('frequency' => 'monthly'))
+    ->condition('category', 'newsletter')
+    ->execute();
+  return t('Added document publication frequency. Existing newsletters are marked monthly.');
 }

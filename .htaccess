@@ -55,6 +55,10 @@ DirectoryIndex index.php index.html index.htm
 <IfModule mod_rewrite.c>
   RewriteEngine on
 
+  # Canonicalize the apex domain to HTTPS on www, preserving the requested path.
+  RewriteCond %{HTTP_HOST} ^hivecolab\.org(?::\d+)?$ [NC]
+  RewriteRule ^ https://www.hivecolab.org%{REQUEST_URI} [R=301,L,NE]
+
   # Set "protossl" to "s" if we were accessed via https://.  This is used later
   # if you enable "www." stripping or enforcement, in order to ensure that
   # you don't bounce between http and https.

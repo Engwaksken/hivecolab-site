@@ -1681,7 +1681,11 @@ h2.big-text {
    top row, while the logo and menu control sit at opposite ends below it. */
 @media (max-width: 767px) {
   .header-wrapper {
-    position: relative;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 10;
   }
 
   .top_row #top,

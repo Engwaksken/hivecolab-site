@@ -1746,6 +1746,7 @@ h2.big-text {
   }
 
   #navbar #main-navs > .container {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1777,21 +1778,21 @@ h2.big-text {
   }
 
   #navbar .navbar-toggler {
-    position: static;
+    position: absolute;
+    top: 50%;
+    right: 10px;
     display: block;
     flex: 0 0 auto;
-    margin: 0 0 0 auto;
+    margin: 0;
     padding: 8px 10px !important;
+    transform: translateY(-50%);
+    z-index: 2;
   }
 
   #navbar #header {
-    display: flex;
-    flex: 0 0 auto;
-    align-items: center;
-    justify-content: flex-end;
     float: none;
-    width: auto;
+    width: 100%;
     min-width: 0;
-    margin-left: auto;
+    margin-left: 0;
   }
 }

@@ -1787,9 +1787,14 @@ h2.big-text {
     top: 16px;
     right: 10px;
     display: block;
+    width: 38px;
+    height: 34px;
     flex: 0 0 auto;
     margin: 0;
-    padding: 8px 10px !important;
+    padding: 5px !important;
+    background-color: #fff;
+    border: 0;
+    border-radius: 0;
     transform: none;
     z-index: 2;
   }

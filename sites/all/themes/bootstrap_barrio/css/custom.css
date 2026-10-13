@@ -1676,3 +1676,115 @@ h2.big-text {
   .main-content-wrapper .main-container { padding-left: 18px; padding-right: 18px; }
   .page_title h1 { font-size: clamp(36px, 10vw, 56px); }
 }
+
+/* Keep the compact header usable on phones: links and social icons share one
+   top row, while the logo and menu control sit at opposite ends below it. */
+@media (max-width: 767px) {
+  .header-wrapper {
+    position: relative;
+  }
+
+  .top_row #top,
+  .top_row #top > .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .top_row #top > .row > [class*="col-"] {
+    flex: 1 1 auto;
+    width: auto;
+    max-width: none;
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  .top_row #top ul,
+  .top_row #top .nav {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 3px;
+    margin: 0;
+  }
+
+  .top_row #top li {
+    flex: 0 0 auto;
+    margin: 0;
+  }
+
+  .top_row #top a {
+    padding: 4px 5px;
+    font-size: clamp(10px, 2.8vw, 13px);
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+
+  .social {
+    float: none;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 3px;
+    margin: 0;
+    padding: 2px 0;
+    white-space: nowrap;
+  }
+
+  .top_row .fa {
+    margin: 0;
+    padding: 4px;
+    font-size: 12px;
+  }
+
+  #navbar .navbar-inner,
+  #navbar #main-navs,
+  #navbar #main-navs > .container {
+    width: 100%;
+  }
+
+  #navbar #main-navs > .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 82px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  #navbar .navbar-header {
+    float: none;
+    flex: 0 1 auto;
+    min-width: 0;
+    margin: 0;
+  }
+
+  #navbar .logo {
+    display: block;
+    float: none !important;
+    margin: 0;
+  }
+
+  #navbar .logo img {
+    display: block;
+    width: auto;
+    max-width: min(62vw, 210px);
+    height: auto !important;
+    max-height: 68px;
+    object-fit: contain;
+  }
+
+  #navbar .navbar-toggler {
+    position: static;
+    flex: 0 0 auto;
+    margin-left: 12px;
+    padding: 8px 10px !important;
+  }
+
+  #navbar #header {
+    float: none;
+    width: 100%;
+  }
+}

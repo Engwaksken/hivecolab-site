@@ -1,0 +1,601 @@
+/* ==========================================================================
+   Accessibility widget (js/a11y-widget.js)
+   Part 1 styles the widget itself; part 2 holds the page-wide adjustments it
+   switches on through classes on <html>. Page rules skip #hc-a11y so the
+   widget stays readable whatever is turned on.
+   ========================================================================== */
+
+/* 1. Widget ---------------------------------------------------------------- */
+
+#hc-a11y {
+  --hc-accent: #c2410c;
+  --hc-accent-dark: #9a3412;
+  --hc-accent-soft: #fff1e6;
+  --hc-surface: #f6f4f1;
+  --hc-border: #e3ded7;
+  --hc-text: #1f2328;
+  --hc-muted: #5b616b;
+}
+
+#hc-a11y,
+#hc-a11y * {
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif !important;
+  letter-spacing: normal !important;
+  word-spacing: normal !important;
+  text-transform: none;
+  text-align: inherit;
+}
+
+#hc-a11y [hidden] {
+  display: none !important;
+}
+
+#hc-a11y button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.2 !important;
+  text-shadow: none;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+#hc-a11y svg {
+  display: block;
+  flex: 0 0 auto;
+}
+
+#hc-a11y button:focus {
+  outline: none;
+}
+
+#hc-a11y button:focus-visible,
+#hc-a11y .hc-a11y-title:focus-visible {
+  outline: 3px solid var(--hc-text) !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px #fff !important;
+}
+
+.hc-a11y-trigger {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  z-index: 2147483000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  color: #fff;
+  background: var(--hc-accent);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .25) !important;
+  transition: background-color .2s ease, transform .2s ease;
+}
+
+.hc-a11y-trigger:hover {
+  background: var(--hc-accent-dark);
+  transform: scale(1.06);
+}
+
+.hc-a11y-trigger svg {
+  width: 30px;
+  height: 30px;
+}
+
+/* Small dot on the button when any setting is active. */
+#hc-a11y.has-settings .hc-a11y-trigger::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 14px;
+  height: 14px;
+  background: #16a34a;
+  border: 2px solid #fff;
+  border-radius: 50%;
+}
+
+.hc-a11y-panel {
+  position: fixed;
+  left: 20px;
+  bottom: 88px;
+  z-index: 2147483001;
+  display: flex;
+  flex-direction: column;
+  width: 400px;
+  max-width: calc(100vw - 40px);
+  max-height: calc(100vh - 110px);
+  max-height: calc(100dvh - 110px);
+  overflow: hidden;
+  color: var(--hc-text);
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .28);
+  animation: hc-a11y-in .2s ease-out;
+}
+
+@keyframes hc-a11y-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+
+.hc-a11y-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 14px 14px 18px;
+  color: #fff;
+  background: var(--hc-accent);
+}
+
+#hc-a11y .hc-a11y-title {
+  margin: 0;
+  padding: 0;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.2 !important;
+  color: #fff;
+  background: none;
+  border: 0;
+}
+
+#hc-a11y .hc-a11y-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  color: #fff;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+}
+
+#hc-a11y .hc-a11y-close:hover {
+  background: rgba(255, 255, 255, .18);
+}
+
+.hc-a11y-body {
+  flex: 1 1 auto;
+  padding: 4px 16px 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+#hc-a11y .hc-a11y-section-title {
+  margin: 16px 0 10px;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2 !important;
+  color: var(--hc-muted);
+  background: none;
+  border: 0;
+}
+
+.hc-a11y-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding: 10px 10px 10px 14px;
+  background: var(--hc-surface);
+  border-radius: 12px;
+}
+
+#hc-a11y .hc-a11y-stepper-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.hc-a11y-stepper-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#hc-a11y .hc-a11y-step {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  color: #fff;
+  background: var(--hc-accent);
+  border: 0;
+  border-radius: 10px;
+}
+
+#hc-a11y .hc-a11y-step:hover {
+  background: var(--hc-accent-dark);
+}
+
+#hc-a11y .hc-a11y-step[aria-disabled="true"] {
+  color: var(--hc-muted);
+  background: var(--hc-border);
+  cursor: not-allowed;
+}
+
+#hc-a11y .hc-a11y-step-value {
+  min-width: 52px;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.hc-a11y-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+#hc-a11y .hc-a11y-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  min-height: 104px;
+  padding: 12px 6px 10px;
+  color: var(--hc-text);
+  text-align: center;
+  background: var(--hc-surface);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+
+#hc-a11y .hc-a11y-tile:hover {
+  border-color: var(--hc-border);
+}
+
+#hc-a11y .hc-a11y-tile[aria-pressed="true"] {
+  color: var(--hc-accent-dark);
+  background: var(--hc-accent-soft);
+  border-color: var(--hc-accent);
+}
+
+.hc-a11y-tile-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  color: var(--hc-accent);
+  background: #fff;
+  border-radius: 50%;
+}
+
+#hc-a11y .hc-a11y-tile[aria-pressed="true"] .hc-a11y-tile-icon {
+  color: #fff;
+  background: var(--hc-accent);
+}
+
+.hc-a11y-tile-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+#hc-a11y .hc-a11y-tile-label {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2 !important;
+}
+
+#hc-a11y .hc-a11y-tile-state {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2 !important;
+  color: var(--hc-muted);
+}
+
+#hc-a11y .hc-a11y-tile[aria-pressed="true"] .hc-a11y-tile-state {
+  color: var(--hc-accent-dark);
+}
+
+.hc-a11y-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.hc-a11y-dots span {
+  width: 6px;
+  height: 6px;
+  background: #cfc8bf;
+  border-radius: 50%;
+}
+
+.hc-a11y-dots span.is-on {
+  background: var(--hc-accent);
+}
+
+.hc-a11y-footer {
+  padding: 12px 16px 14px;
+  background: #fff;
+  border-top: 1px solid var(--hc-border);
+}
+
+#hc-a11y .hc-a11y-reset {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--hc-text);
+  border: 0;
+  border-radius: 10px;
+}
+
+#hc-a11y .hc-a11y-reset:hover {
+  background: #000;
+}
+
+#hc-a11y .hc-a11y-reset svg {
+  width: 18px;
+  height: 18px;
+}
+
+#hc-a11y .hc-a11y-note {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.4 !important;
+  color: var(--hc-muted);
+  text-align: center;
+}
+
+.hc-a11y-sr {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Reading guide and mask follow the pointer; they never catch clicks. */
+.hc-a11y-guide,
+.hc-a11y-mask {
+  position: fixed;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.hc-a11y-guide {
+  z-index: 2147482999;
+  top: 50%;
+  height: 14px;
+  background: rgba(194, 65, 12, .18);
+  border-top: 3px solid var(--hc-accent);
+  border-bottom: 3px solid var(--hc-accent);
+}
+
+.hc-a11y-mask {
+  z-index: 2147482998;
+  background: rgba(0, 0, 0, .62);
+}
+
+.hc-a11y-mask-top {
+  top: 0;
+  height: 0;
+}
+
+.hc-a11y-mask-bottom {
+  top: 100%;
+  bottom: 0;
+}
+
+/* Tablets */
+@media (max-width: 991px) {
+  .hc-a11y-panel {
+    width: 380px;
+  }
+}
+
+/* Phones: the panel becomes a bottom sheet. */
+@media (max-width: 575px) {
+  .hc-a11y-trigger {
+    left: 14px;
+    bottom: 14px;
+    width: 50px;
+    height: 50px;
+  }
+
+  .hc-a11y-trigger svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  .hc-a11y-panel {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: 100%;
+    max-height: 88vh;
+    max-height: 88dvh;
+    border-radius: 18px 18px 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .hc-a11y-body {
+    padding: 2px 12px 14px;
+  }
+
+  #hc-a11y .hc-a11y-tile {
+    min-height: 96px;
+    padding: 10px 4px 8px;
+  }
+
+  #hc-a11y .hc-a11y-tile-label {
+    font-size: 12.5px;
+  }
+}
+
+@media (max-width: 359px) {
+  .hc-a11y-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hc-a11y-panel {
+    animation: none;
+  }
+
+  .hc-a11y-trigger,
+  #hc-a11y .hc-a11y-tile {
+    transition: none;
+  }
+}
+
+@media print {
+  #hc-a11y {
+    display: none !important;
+  }
+}
+
+/* 2. Page adjustments ------------------------------------------------------- */
+
+html.hc-a11y-lh body *:not(#hc-a11y):not(#hc-a11y *) {
+  line-height: var(--hc-a11y-lh) !important;
+}
+
+html.hc-a11y-ls body *:not(#hc-a11y):not(#hc-a11y *) {
+  letter-spacing: var(--hc-a11y-ls) !important;
+  word-spacing: calc(var(--hc-a11y-ls) * 2) !important;
+}
+
+/* Icon fonts keep their own family or the glyphs turn into letters. */
+html.hc-a11y-font body *:not(#hc-a11y):not(#hc-a11y *):not(.fa):not(.glyphicon):not([class*="flaticon"]):not([class*="icon-"]) {
+  font-family: Verdana, Tahoma, Arial, Helvetica, sans-serif !important;
+}
+
+html.hc-a11y-align body :is(p, h1, h2, h3, h4, h5, h6, li, dt, dd, td, th, blockquote, figcaption, label):not(#hc-a11y *) {
+  text-align: left !important;
+}
+
+html.hc-a11y-links body a:not(#hc-a11y *) {
+  color: #111 !important;
+  text-decoration: underline !important;
+  text-underline-offset: 3px;
+  background-color: #ffe98a !important;
+  outline: 2px solid #c2410c !important;
+  outline-offset: 1px;
+}
+
+html.hc-a11y-headings body :is(h1, h2, h3, h4, h5, h6):not(#hc-a11y *) {
+  outline: 3px dashed #c2410c !important;
+  outline-offset: 4px;
+}
+
+/* High contrast: dark */
+html.hc-a11y-contrast-dark,
+html.hc-a11y-contrast-dark body,
+html.hc-a11y-contrast-dark body *:not(#hc-a11y):not(#hc-a11y *) {
+  color: #fff !important;
+  background-color: #000 !important;
+  border-color: #fff !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+html.hc-a11y-contrast-dark body :is(a, a *):not(#hc-a11y *) {
+  color: #ffe14d !important;
+}
+
+html.hc-a11y-contrast-dark body :is(input, select, textarea, button):not(#hc-a11y *) {
+  border: 1px solid #fff !important;
+}
+
+/* High contrast: light */
+html.hc-a11y-contrast-light,
+html.hc-a11y-contrast-light body,
+html.hc-a11y-contrast-light body *:not(#hc-a11y):not(#hc-a11y *) {
+  color: #000 !important;
+  background-color: #fff !important;
+  border-color: #000 !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+html.hc-a11y-contrast-light body :is(a, a *):not(#hc-a11y *) {
+  color: #0033cc !important;
+  text-decoration: underline !important;
+}
+
+html.hc-a11y-contrast-light body :is(input, select, textarea, button):not(#hc-a11y *) {
+  border: 1px solid #000 !important;
+}
+
+/* Inverted colours: the filter is set on <html> by the script. Photos and the
+   widget are flipped back so they look normal. */
+html.hc-a11y-invert {
+  background-color: #fff;
+}
+
+html.hc-a11y-invert body :is(img, picture, video, iframe, canvas, [style*="background-image"]):not(#hc-a11y *),
+html.hc-a11y-invert #hc-a11y > * {
+  filter: invert(1) hue-rotate(180deg) !important;
+}
+
+html.hc-a11y-cursor,
+html.hc-a11y-cursor * {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cpath d='M8 4v36l9.5-9.5 6.5 14.5 6-2.8-6.4-14.2H37z' fill='%23000' stroke='%23fff' stroke-width='3' stroke-linejoin='round'/%3E%3C/svg%3E") 8 4, auto !important;
+}
+
+html.hc-a11y-still *,
+html.hc-a11y-still *::before,
+html.hc-a11y-still *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
+html.hc-a11y-noimg body :is(img, picture, video, canvas, svg):not(#hc-a11y *) {
+  visibility: hidden !important;
+}
+
+html.hc-a11y-noimg body *:not(#hc-a11y):not(#hc-a11y *),
+html.hc-a11y-noimg body *:not(#hc-a11y):not(#hc-a11y *)::before,
+html.hc-a11y-noimg body *:not(#hc-a11y):not(#hc-a11y *)::after {
+  background-image: none !important;
+}
+
+html.hc-a11y-focus body *:focus:not(#hc-a11y *) {
+  outline: 3px solid #c2410c !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 6px #fff !important;
+}
+
+html.hc-a11y-read body *:not(#hc-a11y *):hover {
+  cursor: help;
+}
+
+html.hc-a11y-read body a:not(#hc-a11y *):hover {
+  cursor: pointer;
+}
+
+.hc-a11y-speaking {
+  background-color: rgba(255, 225, 77, .45) !important;
+  outline: 3px solid #c2410c !important;
+  outline-offset: 2px;
+}

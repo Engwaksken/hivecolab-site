@@ -20,6 +20,11 @@ function bootstrap_barrio_preprocess_html(&$variables) {
       'href' => base_path() . $favicon . '?v=3',
     ), TRUE);
   }
+  // Accessibility widget. The script runs in the header so saved display
+  // settings apply before the page paints.
+  $theme_path = drupal_get_path('theme', 'bootstrap_barrio');
+  drupal_add_css($theme_path . '/css/a11y-widget.css', array('group' => CSS_THEME, 'every_page' => TRUE, 'weight' => 100));
+  drupal_add_js($theme_path . '/js/a11y-widget.js', array('scope' => 'header', 'group' => JS_THEME, 'every_page' => TRUE));
   if (arg(0) == 'taxonomy') {
     $tid = arg(2);
     $taxonomy = taxonomy_term_load($tid);

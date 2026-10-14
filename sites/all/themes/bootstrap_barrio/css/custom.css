@@ -84,10 +84,38 @@ a:hover {color: #ff5722;}
 	z-index: 10;
 }
 
+/* Logo sizing: one height per breakpoint, shrunk when the header is sticky.
+   Width follows the image's aspect ratio, capped so it never crowds the menu. */
+.logo {
+  --logo-height: 84px;
+  --logo-height-sticky: 64px;
+  --logo-max-width: 240px;
+}
 .logo img {
-  height: 84px !important;
-  transition: all .4s ease-in-out;
+  display: block;
+  width: auto;
+  height: var(--logo-height) !important;
+  max-width: var(--logo-max-width);
+  object-fit: contain;
+  transition: height .4s ease-in-out;
   position: relative;
+}
+.header-wrapper.sticky .logo img {
+  height: var(--logo-height-sticky) !important;
+}
+@media (max-width: 991px) {
+  .logo {
+    --logo-height: 64px;
+    --logo-height-sticky: 54px;
+    --logo-max-width: 200px;
+  }
+}
+@media (max-width: 767px) {
+  .logo {
+    --logo-height: 56px;
+    --logo-height-sticky: 48px;
+    --logo-max-width: min(60vw, 180px);
+  }
 }
 .mega-dropdown {
   position: static !important;
@@ -98,11 +126,6 @@ a:hover {color: #ff5722;}
     width: 1170px;
   }
 }
-.header-wrapper.sticky .logo img {
-  height: 67px !important;
-  /* transition: 0.3s all ease; */
-}
-
 .dropdown-menu {
   padding: 20px 0;
   position: absolute;
@@ -1771,15 +1794,6 @@ h2.big-text {
     display: block;
     float: none !important;
     margin: 0;
-  }
-
-  #navbar .logo img {
-    display: block;
-    width: auto;
-    max-width: min(62vw, 210px);
-    height: auto !important;
-    max-height: 68px;
-    object-fit: contain;
   }
 
   #navbar .navbar-toggler {

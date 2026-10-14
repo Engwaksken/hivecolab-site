@@ -8,7 +8,8 @@
 /* 1. Widget ---------------------------------------------------------------- */
 
 #hc-a11y {
-  --hc-accent: #c2410c;
+  --hc-accent: #f78c2e;
+  --hc-accent-hover: #e2761a;
   --hc-accent-dark: #9a3412;
   --hc-accent-soft: #fff1e6;
   --hc-surface: #f6f4f1;
@@ -78,7 +79,7 @@
 }
 
 .hc-a11y-trigger:hover {
-  background: var(--hc-accent-dark);
+  background: var(--hc-accent-hover);
   transform: scale(1.06);
 }
 
@@ -217,7 +218,7 @@
 }
 
 #hc-a11y .hc-a11y-step:hover {
-  background: var(--hc-accent-dark);
+  background: var(--hc-accent-hover);
 }
 
 #hc-a11y .hc-a11y-step[aria-disabled="true"] {
@@ -383,7 +384,7 @@
   z-index: 2147482999;
   top: 50%;
   height: 14px;
-  background: rgba(194, 65, 12, .18);
+  background: rgba(247, 140, 46, .2);
   border-top: 3px solid var(--hc-accent);
   border-bottom: 3px solid var(--hc-accent);
 }
@@ -498,12 +499,12 @@ html.hc-a11y-links body a:not(#hc-a11y *) {
   text-decoration: underline !important;
   text-underline-offset: 3px;
   background-color: #ffe98a !important;
-  outline: 2px solid #c2410c !important;
+  outline: 2px solid #f78c2e !important;
   outline-offset: 1px;
 }
 
 html.hc-a11y-headings body :is(h1, h2, h3, h4, h5, h6):not(#hc-a11y *) {
-  outline: 3px dashed #c2410c !important;
+  outline: 3px dashed #f78c2e !important;
   outline-offset: 4px;
 }
 
@@ -581,7 +582,7 @@ html.hc-a11y-noimg body *:not(#hc-a11y):not(#hc-a11y *)::after {
 }
 
 html.hc-a11y-focus body *:focus:not(#hc-a11y *) {
-  outline: 3px solid #c2410c !important;
+  outline: 3px solid #f78c2e !important;
   outline-offset: 2px !important;
   box-shadow: 0 0 0 6px #fff !important;
 }
@@ -596,6 +597,6 @@ html.hc-a11y-read body a:not(#hc-a11y *):hover {
 
 .hc-a11y-speaking {
   background-color: rgba(255, 225, 77, .45) !important;
-  outline: 3px solid #c2410c !important;
+  outline: 3px solid #f78c2e !important;
   outline-offset: 2px;
 }

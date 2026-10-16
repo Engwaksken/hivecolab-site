@@ -1,0 +1,118 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function hive_downloads_menu() {
+  $items['hive-download/%file'] = array(
+    'page callback' => 'hive_downloads_download',
+    'page arguments' => array(1),
+    'access callback' => 'hive_downloads_file_access',
+    'access arguments' => array(1),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_file_url_alter().
+ *
+ * Drupal routes private files through file_download; public files are otherwise
+ * served directly by the web server. Use a tracking route for eligible files.
+ */
+function hive_downloads_file_url_alter(&$uri) {
+  if (strpos($uri, 'public://') !== 0 && strpos($uri, 'private://') !== 0) {
+    return;
+  }
+  $files = file_load_multiple(array(), array('uri' => $uri));
+  if (!$files) {
+    return;
+  }
+  $file = reset($files);
+  if (hive_downloads_file_node($file->fid)) {
+    $uri = url('hive-download/' . $file->fid, array('absolute' => TRUE));
+  }
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function hive_downloads_node_view($node, $view_mode, $langcode) {
+  if (!hive_downloads_is_target_node($node)) {
+    return;
+  }
+
+  $fids = hive_downloads_node_fids($node);
+  if (!$fids) {
+    return;
+  }
+  $result = db_query('SELECT fid, count FROM {hive_downloads} WHERE fid IN (:fids)', array(':fids' => $fids))->fetchAllKeyed();
+  $total = 0;
+  foreach ($fids as $fid) {
+    $total += isset($result[$fid]) ? $result[$fid] : 0;
+  }
+  $node->content['hive_downloads_count'] = array(
+    '#markup' => '<div class="hive-download-count">' . t('Downloads: @count', array('@count' => $total)) . '</div>',
+    '#weight' => 100,
+  );
+}
+
+/** Returns whether this node is a newsletter or report. */
+function hive_downloads_is_target_node($node) {
+  return in_array($node->type, array('newsletter', 'report'), TRUE);
+}
+
+/** Collect file IDs attached to a node. */
+function hive_downloads_node_fids($node) {
+  $fids = array();
+  foreach (field_info_instances('node', $node->type) as $field_name => $instance) {
+    $field = field_info_field($field_name);
+    if (!$field || $field['type'] !== 'file') {
+      continue;
+    }
+    foreach (field_get_items('node', $node, $field_name) ?: array() as $item) {
+      if (!empty($item['fid'])) {
+        $fids[] = $item['fid'];
+      }
+    }
+  }
+  return array_unique($fids);
+}
+
+/** Find an eligible node using a file. */
+function hive_downloads_file_node($fid) {
+  $file = file_load($fid);
+  if (!$file) {
+    return FALSE;
+  }
+  $usages = file_usage_list($file);
+  foreach ($usages as $module_usages) {
+    foreach ($module_usages as $type_usages) {
+      foreach ($type_usages as $id => $count) {
+        $node = node_load($id);
+        if ($node && hive_downloads_is_target_node($node) && in_array($fid, hive_downloads_node_fids($node))) {
+          return $node;
+        }
+      }
+    }
+  }
+  return FALSE;
+}
+
+/** Route access: eligible files must be attached to a viewable target node. */
+function hive_downloads_file_access($file) {
+  $node = $file ? hive_downloads_file_node($file->fid) : FALSE;
+  return $node && node_access('view', $node);
+}
+
+/** Download callback; increment only when an eligible, accessible file is served. */
+function hive_downloads_download($file) {
+  if (!$file || !hive_downloads_file_access($file)) {
+    return MENU_ACCESS_DENIED;
+  }
+  db_merge('hive_downloads')->key(array('fid' => $file->fid))
+    ->insertFields(array('count' => 1))
+    ->expression('count', 'count + 1')
+    ->execute();
+  file_transfer($file->uri, file_get_content_headers($file));
+}

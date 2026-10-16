@@ -1,0 +1,16 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function hive_downloads_schema() {
+  $schema['hive_downloads'] = array(
+    'description' => 'Download totals for newsletter and report files.',
+    'fields' => array(
+      'fid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
+      'count' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+    ),
+    'primary key' => array('fid'),
+  );
+  return $schema;
+}

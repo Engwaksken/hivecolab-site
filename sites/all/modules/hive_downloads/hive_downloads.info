@@ -1,0 +1,5 @@
+name = Hive Newsletter and Report Downloads
+description = Tracks downloads of files attached to newsletter and report nodes and displays counts on those nodes.
+core = 7.x
+package = Hive Colab
+dependencies[] = file

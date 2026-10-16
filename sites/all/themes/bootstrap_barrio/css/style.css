@@ -34,8 +34,8 @@ body { padding: 0; overflow-x: hidden; }
 
 .block-commerce-cart .dropdown-menu { left: auto; right: 0px; top: 52px; padding: 10px; }
 
-.front .main-container { padding: 60px 0; }
-.not-front .main-container { padding: 60px 0 100px; }
+.front .main-container { padding-top: 6rem; padding-bottom: 6rem; }
+.not-front .main-container { padding-top: 6rem; padding-bottom: 10rem; }
 
 .more-link { text-align: center; }
 

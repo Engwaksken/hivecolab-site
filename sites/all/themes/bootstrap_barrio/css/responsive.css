@@ -1,48 +1,42 @@
-@media only screen and (max-width : 600px ){
-  #content-inner {margin: 0 22px;}
-  .sld_content h1 {font-size: 8vw;}
-  .sld_content {padding-top: 45%;}
+/* Small phones (up to 600px). Loaded after custom.css; sizes are rem on the
+   site's 10px root (see custom.css). */
+@media only screen and (max-width: 600px) {
+  #content-inner {margin: 0 1.2rem;}
+  .sld_content h1 {font-size: clamp(2.6rem, 8vw, 4.2rem);}
   .hom_bnr,
   .frnt-slider {
     background-size: cover !important;
-    min-height : 530px;
+    min-height: 53rem;
   }
 
   .f-inner .row {
     display: flex;
     align-items: center;
     justify-content: space-around;
-   }
-   .navbar-toggler {
+    row-gap: 1.2rem;
+  }
+  .f-inner .row > * {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+  .navbar-toggler {
     position: absolute;
-    top: 12px;
-    right: 10px;
+    top: 1.2rem;
+    right: 1rem;
     background: #fff;
-    padding: 6px 2px 0px !important;
+    padding: .6rem .2rem 0 !important;
     line-height: 0;
     border: none;
     border-radius: 0;
   }
-   .pb_button_1,
-   .pb_button_1:hover,
-   .pb_button_2,
-   .pb_button_2:hover {
-     padding-top: 11px;
-     padding-right: 9px;
-     padding-bottom: 11px;
-     padding-left: 9px;
-   }
-  .pb_button_1 {font-size: 14px;}
-  .f-inner {bottom: 74px;}
   ol.flex-control-nav.flex-control-paging {display: none;}
   .line {
-    font-size: 3.5vw;
-    padding: 25px 0 50px;
+    font-size: 1.6rem;
+    padding: 1.5rem 0 1rem;
   }
-  .kimg {height: 250px;}
   .km {border: none !important;}
-  .km .inner {padding: 32px 0px 0px;}
-  .row.frrow{margin-top: 0px;margin-bottom: 0px;}
+  .km .inner {padding: 3.2rem 0 0;}
+  .row.frrow{margin-top: 0;margin-bottom: 0;}
   .navbar {display: block;}
   .navbar-collapse {border-top: 1px solid #e9e9e9;}
   .view20 .views-row {width: 100%;}

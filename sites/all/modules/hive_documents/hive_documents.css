@@ -13,8 +13,9 @@
 .hive-document-card:hover .hive-document-thumbnail img{transform:scale(1.04)}
 .hive-document-placeholder{font-size:30px;font-weight:800;color:#da7829;letter-spacing:.08em}
 .hive-document-card-copy{display:block;padding:16px 18px 20px}
-.hive-document-year{display:block;margin-bottom:6px;color:#da7829;font-size:12px;font-weight:700;letter-spacing:.08em}
-.hive-document-frequency{display:inline-block;margin:0 0 8px;padding:3px 8px;border-radius:20px;background:#f7eee6;color:#8c4a18;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.hive-document-card-meta{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hive-document-year{display:block;color:#da7829;font-size:12px;font-weight:700;letter-spacing:.04em}
+.hive-document-frequency{display:inline-block;flex:none;margin:0;padding:3px 8px;border-radius:20px;background:#f7eee6;color:#8c4a18;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .hive-document-card-title{display:-webkit-box;overflow:hidden;font-size:17px;font-weight:700;line-height:1.4;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .hive-document-download-count{display:block;margin-top:10px;color:#777;font-size:12px}
 .hive-document-download-link{display:flex;align-items:center;justify-content:center;gap:8px;box-sizing:border-box;width:calc(100% - 36px);margin:0 18px 18px;padding:10px 14px;border:1px solid #da7829;border-radius:3px;color:#8c4a18;font-size:13px;font-weight:700;text-decoration:none}

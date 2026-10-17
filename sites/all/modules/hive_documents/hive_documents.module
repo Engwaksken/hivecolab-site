@@ -35,6 +35,14 @@ function hive_documents_menu() {
     'access arguments' => array(1),
     'type' => MENU_CALLBACK,
   );
+  $items['hive-document/%/download'] = array(
+    'title' => 'Download document',
+    'page callback' => 'hive_documents_download',
+    'page arguments' => array(1),
+    'access callback' => 'hive_documents_preview_access',
+    'access arguments' => array(1),
+    'type' => MENU_CALLBACK,
+  );
   $items['admin/content/hive-documents/add'] = array(
     'title' => 'Upload newsletter or report', 'page callback' => 'drupal_get_form',
     'page arguments' => array('hive_documents_upload_form'),
@@ -236,7 +244,7 @@ function hive_documents_page($category) {
     $frequency = hive_documents_frequency_label($row);
     $build['documents'][$row->id] = array(
       '#type' => 'container', '#attributes' => array('class' => array('hive-document-card')),
-      'card' => array('#markup' => '<a class="hive-document-card-link" href="' . check_url($preview_url) . '"><span class="hive-document-thumbnail">' . $image_markup . '</span><span class="hive-document-card-copy"><span class="hive-document-year">' . check_plain(hive_documents_period_label($row)) . '</span><span class="hive-document-frequency">' . check_plain($frequency) . '</span><span class="hive-document-card-title">' . check_plain($row->title) . '</span></span></a>'),
+       'card' => array('#markup' => '<a class="hive-document-card-link" href="' . check_url($preview_url) . '"><span class="hive-document-thumbnail">' . $image_markup . '</span><span class="hive-document-card-copy"><span class="hive-document-year">' . check_plain(hive_documents_period_label($row)) . '</span><span class="hive-document-frequency">' . check_plain($frequency) . '</span><span class="hive-document-card-title">' . check_plain($row->title) . '</span><span class="hive-document-download-count">' . t('!count downloads', array('!count' => (int) $row->downloads)) . '</span></span></a>'),
     );
   }
   $build['#attached']['css'][] = drupal_get_path('module', 'hive_documents') . '/hive_documents.css';
@@ -278,7 +286,23 @@ function hive_documents_preview_page($id) {
     return MENU_NOT_FOUND;
   }
   $pdf_url = file_create_url($document->uri);
+  $download_url = url('hive-document/' . (int) $document->id . '/download');
   $build['#attached']['css'][] = drupal_get_path('module', 'hive_documents') . '/hive_documents.css';
-  $build['preview'] = array('#markup' => '<article class="hive-document-preview-page"><p class="hive-document-kicker">' . check_plain(hive_documents_period_label($document)) . ' · ' . check_plain(hive_documents_frequency_label($document)) . '</p><h1>' . check_plain($document->title) . '</h1>' . (!empty($document->description) ? '<p class="hive-document-description">' . nl2br(check_plain($document->description)) . '</p>' : '') . '<p><a class="btn btn-primary" href="' . check_url($pdf_url) . '" download="' . check_plain($document->filename) . '">' . t('Download PDF') . '</a></p><iframe src="' . check_url($pdf_url) . '#toolbar=0" title="' . check_plain(t('Preview: @title', array('@title' => $document->title))) . '"></iframe></article>');
+  $build['preview'] = array('#markup' => '<article class="hive-document-preview-page"><p class="hive-document-kicker">' . check_plain(hive_documents_period_label($document)) . ' · ' . check_plain(hive_documents_frequency_label($document)) . '</p><h1>' . check_plain($document->title) . '</h1>' . (!empty($document->description) ? '<p class="hive-document-description">' . nl2br(check_plain($document->description)) . '</p>' : '') . '<p><a class="btn btn-primary" href="' . check_url($download_url) . '">' . t('Download PDF') . '</a></p><iframe src="' . check_url($pdf_url) . '#toolbar=0" title="' . check_plain(t('Preview: @title', array('@title' => $document->title))) . '"></iframe></article>');
   return $build;
+}
+
+/**
+ * Increment a document's download count and serve its PDF.
+ */
+function hive_documents_download($id) {
+  $document = db_select('hive_documents', 'd')->fields('d')->condition('id', (int) $id)->execute()->fetchObject();
+  if (!$document) {
+    return MENU_NOT_FOUND;
+  }
+  db_update('hive_documents')
+    ->expression('downloads', 'downloads + 1')
+    ->condition('id', (int) $id)
+    ->execute();
+  file_transfer($document->uri, array('Content-Disposition' => 'attachment; filename="' . str_replace('"', '', $document->filename) . '"'));
 }

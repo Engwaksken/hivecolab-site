@@ -97,3 +97,22 @@ function hive_documents_update_7004() {
   }
   return t('Added document download counts.');
 }
+
+/**
+ * Remove the orphaned Mailchimp segment action reported by Drupal.
+ */
+function hive_documents_update_7005() {
+  if (!db_table_exists('actions')) {
+    return t('The actions table does not exist; no orphaned action was removed.');
+  }
+  require_once DRUPAL_ROOT . '/includes/actions.inc';
+  $action_ids = db_select('actions', 'a')
+    ->fields('a', array('aid'))
+    ->condition('callback', 'mailchimp_lists_add_to_segment_action')
+    ->execute()
+    ->fetchCol();
+  foreach ($action_ids as $action_id) {
+    actions_delete($action_id);
+  }
+  return t('Removed @count orphaned Mailchimp segment action(s).', array('@count' => count($action_ids)));
+}

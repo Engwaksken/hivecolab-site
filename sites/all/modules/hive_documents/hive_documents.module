@@ -48,6 +48,23 @@ function hive_documents_menu() {
     'page arguments' => array('hive_documents_upload_form'),
     'access arguments' => array('upload hive documents'), 'type' => MENU_LOCAL_ACTION,
   );
+  $items['admin/content/hive-documents'] = array(
+    'title' => 'Manage Hive documents', 'page callback' => 'hive_documents_admin_page',
+    'access callback' => 'hive_documents_manage_access', 'type' => MENU_NORMAL_ITEM,
+    'parent' => 'admin/content', 'weight' => 7,
+  );
+  $items['admin/content/hive-documents/%/edit'] = array(
+    'title' => 'Edit document', 'page callback' => 'drupal_get_form',
+    'page arguments' => array('hive_documents_upload_form', NULL, 3),
+    'access callback' => 'hive_documents_admin_access', 'access arguments' => array(3),
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/content/hive-documents/%/delete'] = array(
+    'title' => 'Delete document', 'page callback' => 'drupal_get_form',
+    'page arguments' => array('hive_documents_delete_form', 3),
+    'access callback' => 'hive_documents_admin_access', 'access arguments' => array(3),
+    'type' => MENU_CALLBACK,
+  );
   $items['admin/content/hive-documents/add-newsletter'] = array(
     'title' => 'Add newsletter', 'page callback' => 'drupal_get_form',
     'page arguments' => array('hive_documents_upload_form', 'newsletter'),
@@ -79,12 +96,17 @@ function hive_documents_menu() {
   return $items;
 }
 
-function hive_documents_upload_form($form, &$form_state, $default_category = NULL) {
-  $form['title'] = array('#type' => 'textfield', '#title' => t('Title'), '#required' => TRUE, '#maxlength' => 255);
+function hive_documents_upload_form($form, &$form_state, $default_category = NULL, $document_id = NULL) {
+  $document = $document_id ? hive_documents_load($document_id) : NULL;
+  if ($document_id && !$document) {
+    return MENU_NOT_FOUND;
+  }
+  $form['document_id'] = array('#type' => 'value', '#value' => $document ? $document->id : 0);
+  $form['title'] = array('#type' => 'textfield', '#title' => t('Title'), '#required' => TRUE, '#maxlength' => 255, '#default_value' => $document ? $document->title : '');
   $form['category'] = array(
     '#type' => 'select', '#title' => t('Document type'), '#required' => TRUE,
     '#options' => array('newsletter' => t('Newsletter'), 'report' => t('Report')),
-    '#default_value' => $default_category === 'report' ? 'report' : 'newsletter',
+    '#default_value' => $document ? $document->category : ($default_category === 'report' ? 'report' : 'newsletter'),
   );
   $form['frequency'] = array(
     '#type' => 'select', '#title' => t('Report frequency'),
@@ -98,11 +120,12 @@ function hive_documents_upload_form($form, &$form_state, $default_category = NUL
       'visible' => array(':input[name="category"]' => array('value' => 'report')),
     ),
     '#description' => t('Required for reports. Newsletters are always monthly.'),
+    '#default_value' => $document ? $document->frequency : '',
   );
-  $form['description'] = array('#type' => 'textarea', '#title' => t('Description'));
+  $form['description'] = array('#type' => 'textarea', '#title' => t('Description'), '#default_value' => $document ? $document->description : '');
   $form['year'] = array(
     '#type' => 'textfield', '#title' => t('Publication year'),
-    '#default_value' => format_date(REQUEST_TIME, 'custom', 'Y'), '#maxlength' => 4,
+    '#default_value' => $document ? $document->year : format_date(REQUEST_TIME, 'custom', 'Y'), '#maxlength' => 4,
     '#description' => t('Required for reports. Newsletters use the current issue year.'),
     '#states' => array(
       'visible' => array(':input[name="category"]' => array('value' => 'report')),
@@ -115,18 +138,19 @@ function hive_documents_upload_form($form, &$form_state, $default_category = NUL
   $form['publication_month'] = array(
     '#type' => 'select', '#title' => t('Newsletter issue month'),
     '#options' => $month_options,
-    '#default_value' => format_date(REQUEST_TIME, 'custom', 'n'),
+    '#default_value' => $document && $document->publication_month ? $document->publication_month : format_date(REQUEST_TIME, 'custom', 'n'),
     '#states' => array(
       'visible' => array(':input[name="category"]' => array('value' => 'newsletter')),
     ),
     '#description' => t('Select the month covered by this newsletter.'),
   );
   $form['pdf'] = array(
-    '#type' => 'managed_file', '#title' => t('PDF file'), '#required' => TRUE,
+    '#type' => 'managed_file', '#title' => t('PDF file'), '#required' => !$document,
+    '#default_value' => $document ? hive_documents_file_id($document->uri) : 0,
     '#upload_location' => 'public://hive-documents/', '#upload_validators' => array(
       'file_validate_extensions' => array('pdf'), 'file_validate_size' => array(20 * 1024 * 1024),
     ),
-    '#description' => t('PDF only, up to 20 MB.'),
+    '#description' => $document ? t('PDF only, up to 20 MB. Leave empty to keep the current PDF.') : t('PDF only, up to 20 MB.'),
   );
   $image_validators = array(
     'file_validate_extensions' => array('png gif jpg jpeg webp'),
@@ -135,6 +159,7 @@ function hive_documents_upload_form($form, &$form_state, $default_category = NUL
   );
   $form['thumbnail'] = array(
     '#type' => 'managed_file', '#title' => t('Thumbnail image'),
+    '#default_value' => $document && $document->thumbnail_uri ? hive_documents_file_id($document->thumbnail_uri) : 0,
     '#upload_location' => 'public://hive-documents/images/',
     '#upload_validators' => $image_validators,
     '#description' => t('Optional cover image for this document, up to 8 MB.'),
@@ -145,7 +170,7 @@ function hive_documents_upload_form($form, &$form_state, $default_category = NUL
     '#upload_validators' => $image_validators,
     '#description' => t('Optional. Uploading an image updates the banner for the selected document type.'),
   );
-  $form['submit'] = array('#type' => 'submit', '#value' => t('Publish document'));
+  $form['submit'] = array('#type' => 'submit', '#value' => $document ? t('Save changes') : t('Publish document'));
   return $form;
 }
 
@@ -163,24 +188,35 @@ function hive_documents_upload_form_validate($form, &$form_state) {
 }
 
 function hive_documents_upload_form_submit($form, &$form_state) {
+  $document = !empty($form_state['values']['document_id']) ? hive_documents_load($form_state['values']['document_id']) : NULL;
   $fid = $form_state['values']['pdf'];
-  $file = file_load($fid);
+  $file = $fid ? file_load($fid) : NULL;
+  if (!$file && !$document) {
+    form_set_error('pdf', t('Please upload a PDF file.'));
+    return;
+  }
   $realpath = $file ? drupal_realpath($file->uri) : FALSE;
   $handle = $realpath ? @fopen($realpath, 'rb') : FALSE;
   $signature = $handle ? fread($handle, 5) : '';
   if ($handle) {
     fclose($handle);
   }
-  if (!$file || strtolower(pathinfo($file->filename, PATHINFO_EXTENSION)) !== 'pdf' || $signature !== '%PDF-') {
+  if ($file && (strtolower(pathinfo($file->filename, PATHINFO_EXTENSION)) !== 'pdf' || $signature !== '%PDF-')) {
     form_set_error('pdf', t('Please upload a valid PDF file.'));
     return;
   }
-  $file->status = FILE_STATUS_PERMANENT;
-  file_save($file);
-  $thumbnail_uri = NULL;
+  if ($file) {
+    hive_documents_compress_pdf($file->uri);
+    $file->filesize = filesize(drupal_realpath($file->uri));
+    $file->status = FILE_STATUS_PERMANENT;
+    file_save($file);
+  }
+  $thumbnail_uri = $document ? $document->thumbnail_uri : NULL;
   if (!empty($form_state['values']['thumbnail'])) {
     $thumbnail = file_load($form_state['values']['thumbnail']);
     if ($thumbnail) {
+      hive_documents_compress_image($thumbnail->uri);
+      $thumbnail->filesize = filesize(drupal_realpath($thumbnail->uri));
       $thumbnail->status = FILE_STATUS_PERMANENT;
       file_save($thumbnail);
       $thumbnail_uri = $thumbnail->uri;
@@ -191,25 +227,155 @@ function hive_documents_upload_form_submit($form, &$form_state) {
   if (!empty($form_state['values']['banner'])) {
     $banner = file_load($form_state['values']['banner']);
     if ($banner) {
+      hive_documents_compress_image($banner->uri);
+      $banner->filesize = filesize(drupal_realpath($banner->uri));
       $banner->status = FILE_STATUS_PERMANENT;
       file_save($banner);
       variable_set('hive_documents_banner_' . $category, $banner->uri);
     }
   }
-  db_insert('hive_documents')->fields(array(
+  $fields = array(
     'title' => $form_state['values']['title'],
     'description' => $form_state['values']['description'],
     'category' => $category,
-    'uri' => $file->uri,
-    'filename' => $file->filename,
+    'uri' => $file ? $file->uri : $document->uri,
+    'filename' => $file ? $file->filename : $document->filename,
     'thumbnail_uri' => $thumbnail_uri,
     'year' => (int) $form_state['values']['year'],
     'publication_month' => $category === 'newsletter' ? (int) $form_state['values']['publication_month'] : NULL,
     'frequency' => $frequency,
-    'created' => REQUEST_TIME,
-  ))->execute();
-  drupal_set_message(t('The document has been published.'));
+  );
+  if ($document) {
+    db_update('hive_documents')->fields($fields)->condition('id', $document->id)->execute();
+  }
+  else {
+    $fields['created'] = REQUEST_TIME;
+    $fields['downloads'] = 0;
+    db_insert('hive_documents')->fields($fields)->execute();
+  }
+  drupal_set_message($document ? t('The document has been updated.') : t('The document has been published.'));
   $form_state['redirect'] = $form_state['values']['category'] === 'newsletter' ? 'newsletters' : 'reports';
+}
+
+function hive_documents_load($id) {
+  return db_select('hive_documents', 'd')->fields('d')->condition('id', (int) $id)->execute()->fetchObject();
+}
+
+function hive_documents_file_id($uri) {
+  return (int) db_select('file_managed', 'f')->fields('f', array('fid'))
+    ->condition('uri', $uri)->execute()->fetchField();
+}
+
+function hive_documents_admin_access($id) {
+  return hive_documents_manage_access() && is_numeric($id) && hive_documents_load($id);
+}
+
+function hive_documents_manage_access() {
+  return user_access('upload hive documents') || user_access('administer content');
+}
+
+function hive_documents_admin_page() {
+  $rows = db_select('hive_documents', 'd')->fields('d')->orderBy('created', 'DESC')->execute();
+  $table_rows = array();
+  foreach ($rows as $document) {
+    $table_rows[] = array(
+      check_plain($document->title),
+      check_plain(ucfirst($document->category)),
+      check_plain(hive_documents_period_label($document)),
+      l(t('Edit'), 'admin/content/hive-documents/' . $document->id . '/edit'),
+      l(t('Delete'), 'admin/content/hive-documents/' . $document->id . '/delete'),
+    );
+  }
+  if (!$table_rows) {
+    return array('#markup' => t('There are no published reports or newsletters yet.'));
+  }
+  return array('documents' => array(
+    '#theme' => 'table', '#header' => array(t('Title'), t('Type'), t('Publication'), t('Edit'), t('Delete')),
+    '#rows' => $table_rows, '#empty' => t('No documents found.'),
+  ));
+}
+
+function hive_documents_delete_form($form, &$form_state, $id) {
+  $document = hive_documents_load($id);
+  if (!$document) {
+    return MENU_NOT_FOUND;
+  }
+  $form['id'] = array('#type' => 'value', '#value' => $document->id);
+  return confirm_form($form, t('Delete “@title”?', array('@title' => $document->title)), 'admin/content/hive-documents', t('This will remove the document from the public library.'), t('Delete'), t('Cancel'));
+}
+
+function hive_documents_delete_form_submit($form, &$form_state) {
+  $document = hive_documents_load($form_state['values']['id']);
+  if ($document) {
+    db_delete('hive_documents')->condition('id', $document->id)->execute();
+    hive_documents_delete_file_if_unused($document->uri);
+    if ($document->thumbnail_uri) {
+      hive_documents_delete_file_if_unused($document->thumbnail_uri);
+    }
+    drupal_set_message(t('The document has been deleted.'));
+  }
+  $form_state['redirect'] = 'admin/content/hive-documents';
+}
+
+function hive_documents_delete_file_if_unused($uri) {
+  $referenced = db_select('hive_documents', 'd')->fields('d', array('id'))
+    ->condition(db_or()->condition('uri', $uri)->condition('thumbnail_uri', $uri))
+    ->range(0, 1)->execute()->fetchField();
+  if ($referenced || in_array($uri, array(variable_get('hive_documents_banner_newsletter'), variable_get('hive_documents_banner_report')), TRUE)) {
+    return;
+  }
+  $file = file_load(hive_documents_file_id($uri));
+  if ($file) {
+    file_delete($file);
+  }
+}
+
+/**
+ * Re-encode and resize uploaded library images to reduce their storage size.
+ */
+function hive_documents_compress_image($uri) {
+  $image = image_load($uri);
+  if (!$image) {
+    return FALSE;
+  }
+  if ($image->info['width'] > 1600 || $image->info['height'] > 1600) {
+    image_scale($image, 1600, 1600);
+  }
+  return image_save($image, $uri);
+}
+
+/**
+ * Compress a PDF with Ghostscript when available, preserving the original if
+ * compression fails or produces a larger file.
+ */
+function hive_documents_compress_pdf($uri) {
+  if (!function_exists('exec') || !drupal_realpath($uri)) {
+    return FALSE;
+  }
+  $disabled = array_map('trim', explode(',', ini_get('disable_functions')));
+  if (in_array('exec', $disabled, TRUE)) {
+    return FALSE;
+  }
+  $source = drupal_realpath($uri);
+  $temporary = drupal_tempnam('temporary://', 'hive-pdf-');
+  $temporary_path = $temporary ? drupal_realpath($temporary) : FALSE;
+  if (!$temporary_path) {
+    return FALSE;
+  }
+  $command = escapeshellarg(variable_get('hive_documents_ghostscript_path', 'gs'))
+    . ' -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/ebook'
+    . ' -dNOPAUSE -dQUIET -dBATCH -sOutputFile=' . escapeshellarg($temporary_path)
+    . ' ' . escapeshellarg($source) . ' 2>&1';
+  $output = array();
+  $status = 1;
+  exec($command, $output, $status);
+  $compressed_size = $status === 0 ? filesize($temporary_path) : FALSE;
+  $original_size = filesize($source);
+  if ($compressed_size && $compressed_size < $original_size) {
+    file_unmanaged_copy($temporary, $uri, FILE_EXISTS_REPLACE);
+  }
+  file_unmanaged_delete($temporary);
+  return $compressed_size && $compressed_size < $original_size;
 }
 
 function hive_documents_page($category) {
@@ -237,6 +403,7 @@ function hive_documents_page($category) {
   }
   foreach ($rows as $row) {
     $preview_url = url('hive-document/' . $row->id);
+    $download_url = url('hive-document/' . (int) $row->id . '/download');
     $thumbnail = !empty($row->thumbnail_uri) ? file_create_url($row->thumbnail_uri) : '';
     $image_markup = $thumbnail
       ? '<img src="' . check_url($thumbnail) . '" alt="' . check_plain($row->title) . '" loading="lazy">'
@@ -244,7 +411,7 @@ function hive_documents_page($category) {
     $frequency = hive_documents_frequency_label($row);
     $build['documents'][$row->id] = array(
       '#type' => 'container', '#attributes' => array('class' => array('hive-document-card')),
-       'card' => array('#markup' => '<a class="hive-document-card-link" href="' . check_url($preview_url) . '"><span class="hive-document-thumbnail">' . $image_markup . '</span><span class="hive-document-card-copy"><span class="hive-document-year">' . check_plain(hive_documents_period_label($row)) . '</span><span class="hive-document-frequency">' . check_plain($frequency) . '</span><span class="hive-document-card-title">' . check_plain($row->title) . '</span><span class="hive-document-download-count">' . t('!count downloads', array('!count' => (int) $row->downloads)) . '</span></span></a>'),
+      'card' => array('#markup' => '<a class="hive-document-card-link" href="' . check_url($preview_url) . '"><span class="hive-document-thumbnail">' . $image_markup . '</span><span class="hive-document-card-copy"><span class="hive-document-year">' . check_plain(hive_documents_period_label($row)) . '</span><span class="hive-document-frequency">' . check_plain($frequency) . '</span><span class="hive-document-card-title">' . check_plain($row->title) . '</span><span class="hive-document-download-count">' . format_plural((int) $row->downloads, '1 download', '@count downloads') . '</span></span></a><a class="hive-document-download-link" href="' . check_url($download_url) . '" aria-label="' . check_plain(t('Download @title', array('@title' => $row->title))) . '"><svg class="hive-document-download-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v12m0 0 5-5m-5 5-5-5M5 19v2h14v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>' . t('Download PDF') . '</span></a>'),
     );
   }
   $build['#attached']['css'][] = drupal_get_path('module', 'hive_documents') . '/hive_documents.css';

@@ -4,9 +4,9 @@
 .hive-documents-intro{max-width:760px;margin:0 auto 28px;text-align:center;color:#5d6064;font-size:18px;line-height:1.7}
 .hive-documents-upload{text-align:center;margin:0 0 28px}
 .hive-documents-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}
-.hive-document-card{min-width:0;margin:0 0 8px;background:#fff;border:1px solid #ececec;box-shadow:0 5px 18px rgba(25,35,45,.08);transition:transform .2s ease,box-shadow .2s ease}
+.hive-document-card{display:flex;flex-direction:column;min-width:0;margin:0 0 8px;overflow:hidden;background:#fff;border:1px solid #ececec;box-shadow:0 5px 18px rgba(25,35,45,.08);transition:transform .2s ease,box-shadow .2s ease}
 .hive-document-card:hover{transform:translateY(-4px);box-shadow:0 12px 26px rgba(25,35,45,.14)}
-.hive-document-card-link{display:block;height:100%;color:#414042}
+.hive-document-card-link{display:block;flex:1 0 auto;color:#414042}
 .hive-document-card-link:hover,.hive-document-card-link:focus{color:#da7829}
 .hive-document-thumbnail{display:flex;align-items:center;justify-content:center;aspect-ratio:4/3;overflow:hidden;background:#f3f1ee}
 .hive-document-thumbnail img{width:100%;height:100%;object-fit:cover;transition:transform .3s ease}
@@ -17,7 +17,7 @@
 .hive-document-frequency{display:inline-block;margin:0 0 8px;padding:3px 8px;border-radius:20px;background:#f7eee6;color:#8c4a18;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .hive-document-card-title{display:-webkit-box;overflow:hidden;font-size:17px;font-weight:700;line-height:1.4;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .hive-document-download-count{display:block;margin-top:10px;color:#777;font-size:12px}
-.hive-document-download-link{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 18px 18px;padding:10px 14px;border:1px solid #da7829;border-radius:3px;color:#8c4a18;font-size:13px;font-weight:700;text-decoration:none}
+.hive-document-download-link{display:flex;align-items:center;justify-content:center;gap:8px;box-sizing:border-box;width:calc(100% - 36px);margin:0 18px 18px;padding:10px 14px;border:1px solid #da7829;border-radius:3px;color:#8c4a18;font-size:13px;font-weight:700;text-decoration:none}
 .hive-document-download-link:hover,.hive-document-download-link:focus{background:#da7829;color:#fff;text-decoration:none}
 .hive-document-download-icon{width:17px;height:17px;flex:none}
 .hive-documents-empty{text-align:center;padding:60px 20px;background:#f7f7f7;margin:20px 0 50px}.hive-documents-empty h2{font-size:28px}

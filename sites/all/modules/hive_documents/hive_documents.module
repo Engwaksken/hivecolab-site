@@ -471,6 +471,11 @@ function hive_documents_preview_page($id) {
   }
   $pdf_url = file_create_url($document->uri);
   $download_url = url('hive-document/' . (int) $document->id . '/download');
+  $banner_uri = variable_get('hive_documents_banner_' . $document->category);
+  if ($banner_uri) {
+    $category_title = $document->category === 'newsletter' ? t('Newsletters') : t('Reports');
+    $build['banner'] = array('#markup' => '<div class="hive-documents-banner" style="background-image:url(' . check_url(file_create_url($banner_uri)) . ')"><div class="hive-documents-banner-shade"></div><h1>' . check_plain($category_title) . '</h1></div>');
+  }
   $build['#attached']['css'][] = drupal_get_path('module', 'hive_documents') . '/hive_documents.css';
   $build['preview'] = array('#markup' => '<article class="hive-document-preview-page"><p class="hive-document-kicker">' . check_plain(hive_documents_period_label($document)) . ' · ' . check_plain(hive_documents_frequency_label($document)) . '</p><h1>' . check_plain($document->title) . '</h1>' . (!empty($document->description) ? '<p class="hive-document-description">' . nl2br(check_plain($document->description)) . '</p>' : '') . '<p><a class="btn btn-primary" href="' . check_url($download_url) . '">' . t('Download PDF') . '</a></p><iframe src="' . check_url($pdf_url) . '#toolbar=0" title="' . check_plain(t('Preview: @title', array('@title' => $document->title))) . '"></iframe></article>');
   return $build;

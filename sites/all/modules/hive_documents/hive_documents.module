@@ -49,8 +49,8 @@ function hive_documents_menu() {
     'access arguments' => array('upload hive documents'), 'type' => MENU_LOCAL_ACTION,
   );
   $items['admin/content/hive-documents'] = array(
-    'title' => 'Manage Hive documents', 'page callback' => 'hive_documents_admin_page',
-    'access callback' => 'hive_documents_manage_access', 'type' => MENU_NORMAL_ITEM,
+    'title' => 'Hive documents', 'page callback' => 'hive_documents_admin_page',
+    'access callback' => 'hive_documents_manage_access', 'type' => MENU_LOCAL_TASK,
     'parent' => 'admin/content', 'weight' => 7,
   );
   $items['admin/content/hive-documents/%/edit'] = array(
@@ -275,7 +275,13 @@ function hive_documents_manage_access() {
 }
 
 function hive_documents_admin_page() {
-  $rows = db_select('hive_documents', 'd')->fields('d')->orderBy('created', 'DESC')->execute();
+  $build['filter'] = drupal_get_form('hive_documents_admin_filter_form');
+  $query = db_select('hive_documents', 'd')->fields('d')->orderBy('created', 'DESC');
+  $type = isset($_GET['type']) ? $_GET['type'] : 'all';
+  if (in_array($type, array('newsletter', 'report'), TRUE)) {
+    $query->condition('category', $type);
+  }
+  $rows = $query->execute();
   $table_rows = array();
   foreach ($rows as $document) {
     $table_rows[] = array(
@@ -286,13 +292,24 @@ function hive_documents_admin_page() {
       l(t('Delete'), 'admin/content/hive-documents/' . $document->id . '/delete'),
     );
   }
-  if (!$table_rows) {
-    return array('#markup' => t('There are no published reports or newsletters yet.'));
-  }
-  return array('documents' => array(
+  $build['documents'] = array(
     '#theme' => 'table', '#header' => array(t('Title'), t('Type'), t('Publication'), t('Edit'), t('Delete')),
     '#rows' => $table_rows, '#empty' => t('No documents found.'),
-  ));
+  );
+  return $build;
+}
+
+function hive_documents_admin_filter_form($form, &$form_state) {
+  $type = isset($_GET['type']) && in_array($_GET['type'], array('newsletter', 'report'), TRUE) ? $_GET['type'] : 'all';
+  $form['type'] = array(
+    '#type' => 'select', '#title' => t('Content type'),
+    '#options' => array('all' => t('- All types -'), 'newsletter' => t('Newsletter'), 'report' => t('Report')),
+    '#default_value' => $type,
+  );
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Filter'));
+  $form['#method'] = 'get';
+  $form['#action'] = url('admin/content/hive-documents');
+  return $form;
 }
 
 function hive_documents_delete_form($form, &$form_state, $id) {

@@ -101,6 +101,9 @@ function hive_documents_upload_form($form, &$form_state, $default_category = NUL
   if ($document_id && !$document) {
     return MENU_NOT_FOUND;
   }
+  if ($document) {
+    hive_documents_sync_file_usage($document->id, $document->uri, $document->thumbnail_uri);
+  }
   $form['document_id'] = array('#type' => 'value', '#value' => $document ? $document->id : 0);
   $form['title'] = array('#type' => 'textfield', '#title' => t('Title'), '#required' => TRUE, '#maxlength' => 255, '#default_value' => $document ? $document->title : '');
   $form['category'] = array(
@@ -247,12 +250,20 @@ function hive_documents_upload_form_submit($form, &$form_state) {
   );
   if ($document) {
     db_update('hive_documents')->fields($fields)->condition('id', $document->id)->execute();
+    $document_id = $document->id;
+    if ($document->uri !== $fields['uri']) {
+      hive_documents_remove_file_usage($document->uri, $document_id);
+    }
+    if ($document->thumbnail_uri && $document->thumbnail_uri !== $thumbnail_uri) {
+      hive_documents_remove_file_usage($document->thumbnail_uri, $document_id);
+    }
   }
   else {
     $fields['created'] = REQUEST_TIME;
     $fields['downloads'] = 0;
-    db_insert('hive_documents')->fields($fields)->execute();
+    $document_id = db_insert('hive_documents')->fields($fields)->execute();
   }
+  hive_documents_sync_file_usage($document_id, $fields['uri'], $thumbnail_uri);
   drupal_set_message($document ? t('The document has been updated.') : t('The document has been published.'));
   $form_state['redirect'] = $form_state['values']['category'] === 'newsletter' ? 'newsletters' : 'reports';
 }
@@ -264,6 +275,39 @@ function hive_documents_load($id) {
 function hive_documents_file_id($uri) {
   return (int) db_select('file_managed', 'f')->fields('f', array('fid'))
     ->condition('uri', $uri)->execute()->fetchField();
+}
+
+/**
+ * Register PDF and thumbnail references with Drupal's managed-file system.
+ */
+function hive_documents_sync_file_usage($document_id, $pdf_uri, $thumbnail_uri = NULL) {
+  foreach (array($pdf_uri, $thumbnail_uri) as $uri) {
+    if (!$uri) {
+      continue;
+    }
+    $file = file_load(hive_documents_file_id($uri));
+    if (!$file) {
+      continue;
+    }
+    $usage = file_usage_list($file);
+    if (empty($usage['hive_documents']['document'][$document_id])) {
+      file_usage_add($file, 'hive_documents', 'document', $document_id);
+    }
+  }
+}
+
+/**
+ * Remove this document's managed-file usage reference for a replaced file.
+ */
+function hive_documents_remove_file_usage($uri, $document_id) {
+  $file = file_load(hive_documents_file_id($uri));
+  if (!$file) {
+    return;
+  }
+  $usage = file_usage_list($file);
+  if (!empty($usage['hive_documents']['document'][$document_id])) {
+    file_usage_delete($file, 'hive_documents', 'document', $document_id);
+  }
 }
 
 function hive_documents_admin_access($id) {
@@ -325,8 +369,10 @@ function hive_documents_delete_form_submit($form, &$form_state) {
   $document = hive_documents_load($form_state['values']['id']);
   if ($document) {
     db_delete('hive_documents')->condition('id', $document->id)->execute();
+    hive_documents_remove_file_usage($document->uri, $document->id);
     hive_documents_delete_file_if_unused($document->uri);
     if ($document->thumbnail_uri) {
+      hive_documents_remove_file_usage($document->thumbnail_uri, $document->id);
       hive_documents_delete_file_if_unused($document->thumbnail_uri);
     }
     drupal_set_message(t('The document has been deleted.'));

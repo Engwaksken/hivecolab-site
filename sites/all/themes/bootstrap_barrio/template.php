@@ -96,6 +96,17 @@ function bootstrap_barrio_preprocess_page(&$variables) {
   else {
     $variables['print_content'] = TRUE;
   }
+
+  // Show current job opportunities below the hiring information on Careers.
+  if (arg(0) === 'node' && arg(1) === '220' && function_exists('views_embed_view')) {
+    $opportunities = views_embed_view('opportunities', 'block_1');
+    if (!empty($opportunities)) {
+      $variables['page']['content']['careers_opportunities'] = array(
+        '#markup' => '<section class="careers-opportunities"><h2>Current Opportunities</h2>' . $opportunities . '</section>',
+        '#weight' => 100,
+      );
+    }
+  }
 }
 
 /**

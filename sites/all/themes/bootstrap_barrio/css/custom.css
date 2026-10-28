@@ -1459,7 +1459,8 @@ h2.big-text {
 
 /* Grid Container */
 .view-opportunities.view-display-id-block_1 .view-content,
-.block-views-blockopportunities-block-1 .view-content {
+.block-views-blockopportunities-block-1 .view-content,
+.page-careers .view-opportunities .view-content {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 2rem;
@@ -1468,21 +1469,24 @@ h2.big-text {
 
 @media (max-width: 1199.98px) {
   .view-opportunities.view-display-id-block_1 .view-content,
-  .block-views-blockopportunities-block-1 .view-content {
+  .block-views-blockopportunities-block-1 .view-content,
+  .page-careers .view-opportunities .view-content {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 991.98px) {
   .view-opportunities.view-display-id-block_1 .view-content,
-  .block-views-blockopportunities-block-1 .view-content {
+  .block-views-blockopportunities-block-1 .view-content,
+  .page-careers .view-opportunities .view-content {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 575.98px) {
   .view-opportunities.view-display-id-block_1 .view-content,
-  .block-views-blockopportunities-block-1 .view-content {
+  .block-views-blockopportunities-block-1 .view-content,
+  .page-careers .view-opportunities .view-content {
     grid-template-columns: 1fr;
   }
 }

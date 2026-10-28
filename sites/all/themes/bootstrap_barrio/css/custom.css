@@ -1491,8 +1491,23 @@ h2.big-text {
   }
 }
 
+/* Full-width block below the page body, whatever layout surrounds it. */
 .careers-opportunities {
+  display: block;
+  clear: both;
+  float: none;
+  width: 100%;
+  max-width: 100%;
+  flex: 0 0 100%;
+  grid-column: 1 / -1;
   margin: 3rem 0;
+}
+
+/* Heading sits on its own row above the grid, never inside it. */
+.careers-opportunities-header {
+  display: block;
+  width: 100%;
+  margin-bottom: 0.5rem;
 }
 
 .careers-opportunities .opportunities-page-banner {
@@ -1547,9 +1562,16 @@ h2.big-text {
   margin-top: auto;
 }
 
-.careers-opportunities > h2 {
-  margin-bottom: 1rem;
+.careers-opportunities-header h2 {
+  display: block;
+  float: none;
+  width: 100%;
+  margin: 0;
   text-align: left;
+}
+
+.careers-opportunities .view-opportunities .view-content {
+  padding-top: 1rem;
 }
 
 /* Grid Card */

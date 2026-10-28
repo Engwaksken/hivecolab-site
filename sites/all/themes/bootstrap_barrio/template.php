@@ -150,7 +150,7 @@ function _bootstrap_barrio_careers_opportunities() {
   }
 
   return array(
-    '#markup' => '<section class="careers-opportunities"><h2>' . t('Current Opportunities') . '</h2>' . $listing . '</section>',
+    '#markup' => '<div class="careers-opportunities"><div class="careers-opportunities-header"><h2>' . t('Current Opportunities') . '</h2></div>' . $listing . '</div>',
     '#weight' => 100,
   );
 }

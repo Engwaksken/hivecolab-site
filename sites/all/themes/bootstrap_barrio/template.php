@@ -98,7 +98,8 @@ function bootstrap_barrio_preprocess_page(&$variables) {
   }
 
   // Show current job opportunities below the hiring information on Careers.
-  if (arg(0) === 'node' && arg(1) === '220' && function_exists('views_embed_view')) {
+  $careers_node = function_exists('menu_get_object') ? menu_get_object('node') : NULL;
+  if (!empty($careers_node) && $careers_node->nid == 220 && function_exists('views_embed_view')) {
     $opportunities = views_embed_view('opportunities', 'block_1');
     if (!empty($opportunities)) {
       $variables['page']['content']['careers_opportunities'] = array(

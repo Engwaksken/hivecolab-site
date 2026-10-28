@@ -1495,6 +1495,15 @@ h2.big-text {
   margin: 3rem 0;
 }
 
+.careers-opportunities .opportunities-page-banner {
+  display: none;
+}
+
+.careers-opportunities .view-opportunities .views-row {
+  width: auto;
+  max-width: none;
+}
+
 .careers-opportunities > h2 {
   margin-bottom: 1rem;
   text-align: left;

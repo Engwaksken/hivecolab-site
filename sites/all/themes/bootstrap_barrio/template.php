@@ -49,7 +49,8 @@ function bootstrap_barrio_preprocess_node(&$variables) {
   // Append the live Opportunities view to the Careers page body. This keeps
   // the listings up to date automatically as opportunities are published.
   if (!empty($variables['page']) && !empty($variables['node']->nid) && $variables['node']->nid == 220 && function_exists('views_embed_view')) {
-    $opportunities = views_embed_view('opportunities', 'block_1');
+    // Reuse the page display, which is the site's configured live listing.
+    $opportunities = views_embed_view('opportunities', 'page');
     if (!empty($opportunities)) {
       $variables['content']['careers_opportunities'] = array(
         '#markup' => '<section class="careers-opportunities"><h2>Current Opportunities</h2>' . $opportunities . '</section>',

@@ -136,7 +136,9 @@ function _bootstrap_barrio_careers_opportunities() {
   $rows = array();
   if (!empty($result['node'])) {
     foreach (node_load_multiple(array_keys($result['node'])) as $opportunity) {
-      $rows[] = _bootstrap_barrio_opportunity_card($opportunity);
+      if (!_bootstrap_barrio_opportunity_is_expired($opportunity)) {
+        $rows[] = _bootstrap_barrio_opportunity_card($opportunity);
+      }
     }
   }
 
@@ -151,6 +153,42 @@ function _bootstrap_barrio_careers_opportunities() {
     '#markup' => '<section class="careers-opportunities"><h2>' . t('Current Opportunities') . '</h2>' . $listing . '</section>',
     '#weight' => 100,
   );
+}
+
+/**
+ * Checks whether an opportunity's application deadline has passed.
+ *
+ * Opportunities without a deadline are treated as open. A deadline stays
+ * active until the end of that day in the site's timezone.
+ */
+function _bootstrap_barrio_opportunity_is_expired($node) {
+  $items = field_get_items('node', $node, 'field_application_deadline');
+  if (empty($items[0]['value'])) {
+    return FALSE;
+  }
+
+  $item = $items[0];
+  // Use the end date when the deadline is stored as a date range.
+  $value = !empty($item['value2']) ? $item['value2'] : $item['value'];
+
+  if (is_numeric($value)) {
+    $deadline = (int) $value;
+  }
+  else {
+    $timezone = !empty($item['timezone_db']) ? $item['timezone_db'] : 'UTC';
+    try {
+      $date = new DateTime($value, new DateTimeZone($timezone));
+    }
+    catch (Exception $e) {
+      return FALSE;
+    }
+    $deadline = $date->getTimestamp();
+  }
+
+  // Compare by calendar day so a deadline of today is still listed.
+  $deadline_day = format_date($deadline, 'custom', 'Y-m-d');
+  $today = format_date(REQUEST_TIME, 'custom', 'Y-m-d');
+  return $deadline_day < $today;
 }
 
 /**

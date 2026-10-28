@@ -1518,6 +1518,13 @@ h2.big-text {
   align-items: stretch;
 }
 
+/* Bootstrap's clearfix pseudo-elements would take up grid cells. */
+.careers-opportunities .view-opportunities .view-content::before,
+.careers-opportunities .view-opportunities .view-content::after {
+  content: none;
+  display: none;
+}
+
 .careers-opportunities .view-opportunities .views-row {
   width: auto;
   max-width: none;
@@ -1546,6 +1553,28 @@ h2.big-text {
   height: 100%;
   max-width: none;
   object-fit: cover;
+}
+
+/* Opportunities without an image show the site logo on a soft background. */
+.careers-opportunities .opportunity-image-placeholder {
+  background: linear-gradient(135deg, #fff4ea 0%, #f1f5f9 100%);
+}
+
+.careers-opportunities .views-field-field-featured-image.opportunity-image-placeholder a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.careers-opportunities .views-field-field-featured-image.opportunity-image-placeholder img {
+  width: 55%;
+  height: auto;
+  max-height: 60%;
+  object-fit: contain;
+}
+
+.careers-opportunities .views-row:hover .views-field-field-featured-image.opportunity-image-placeholder img {
+  transform: none;
 }
 
 /* Reserve two lines for titles so dates and summaries line up. */

@@ -67,6 +67,32 @@ function bootstrap_barrio_preprocess_node(&$variables) {
 }
 
 /**
+ * Fix the page banner's fallback image URL.
+ *
+ * The banner view's default image points at a development copy of the site
+ * (http://localhost/hive-colab/), so pages without their own banner showed an
+ * empty header. Opportunities use the Opportunities banner instead.
+ */
+function bootstrap_barrio_preprocess_views_view(&$variables) {
+  if ($variables['view']->name !== 'home_page_banner') {
+    return;
+  }
+
+  $node = menu_get_object('node');
+  $replacements = array();
+  if ($node && $node->type == 'opportunity') {
+    $replacements['default_images/banner-default.jpg'] = 'banners/opportunities_banner.png';
+  }
+  $replacements['http://localhost/hive-colab/'] = base_path();
+
+  foreach (array('header', 'rows', 'footer', 'empty') as $key) {
+    if (!empty($variables[$key]) && is_string($variables[$key])) {
+      $variables[$key] = strtr($variables[$key], $replacements);
+    }
+  }
+}
+
+/**
  * Override or insert variables into the page template for page output.
  *
  * Sets the widths of the main columns of the page.

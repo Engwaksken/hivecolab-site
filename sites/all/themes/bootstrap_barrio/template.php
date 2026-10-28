@@ -46,6 +46,18 @@ function bootstrap_barrio_preprocess_html(&$variables) {
  * Ensure opportunity featured images appear on the full opportunity page.
  */
 function bootstrap_barrio_preprocess_node(&$variables) {
+  // Append the live Opportunities view to the Careers page body. This keeps
+  // the listings up to date automatically as opportunities are published.
+  if (!empty($variables['page']) && !empty($variables['node']->nid) && $variables['node']->nid == 220 && function_exists('views_embed_view')) {
+    $opportunities = views_embed_view('opportunities', 'block_1');
+    if (!empty($opportunities)) {
+      $variables['content']['careers_opportunities'] = array(
+        '#markup' => '<section class="careers-opportunities"><h2>Current Opportunities</h2>' . $opportunities . '</section>',
+        '#weight' => 100,
+      );
+    }
+  }
+
   if ($variables['type'] !== 'opportunity' || empty($variables['page'])) {
     return;
   }
@@ -97,17 +109,6 @@ function bootstrap_barrio_preprocess_page(&$variables) {
     $variables['print_content'] = TRUE;
   }
 
-  // Show current job opportunities below the hiring information on Careers.
-  $careers_node = function_exists('menu_get_object') ? menu_get_object('node') : NULL;
-  if (!empty($careers_node) && $careers_node->nid == 220 && function_exists('views_embed_view')) {
-    $opportunities = views_embed_view('opportunities', 'block_1');
-    if (!empty($opportunities)) {
-      $variables['page']['content']['careers_opportunities'] = array(
-        '#markup' => '<section class="careers-opportunities"><h2>Current Opportunities</h2>' . $opportunities . '</section>',
-        '#weight' => 100,
-      );
-    }
-  }
 }
 
 /**

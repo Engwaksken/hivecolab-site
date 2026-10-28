@@ -46,19 +46,6 @@ function bootstrap_barrio_preprocess_html(&$variables) {
  * Ensure opportunity featured images appear on the full opportunity page.
  */
 function bootstrap_barrio_preprocess_node(&$variables) {
-  // Append the live Opportunities view to the Careers page body. This keeps
-  // the listings up to date automatically as opportunities are published.
-  if (!empty($variables['page']) && !empty($variables['node']->nid) && $variables['node']->nid == 220 && function_exists('views_embed_view')) {
-    // Reuse the page display, which is the site's configured live listing.
-    $opportunities = views_embed_view('opportunities', 'page');
-    if (!empty($opportunities)) {
-      $variables['content']['careers_opportunities'] = array(
-        '#markup' => '<section class="careers-opportunities"><h2>Current Opportunities</h2>' . $opportunities . '</section>',
-        '#weight' => 100,
-      );
-    }
-  }
-
   if ($variables['type'] !== 'opportunity' || empty($variables['page'])) {
     return;
   }
@@ -110,6 +97,91 @@ function bootstrap_barrio_preprocess_page(&$variables) {
     $variables['print_content'] = TRUE;
   }
 
+  // List published opportunities below the hiring information on Careers.
+  // This is added to the page content region rather than the node so Display
+  // Suite layouts and node templates cannot drop it.
+  $node = menu_get_object('node');
+  if ($node && _bootstrap_barrio_is_careers_node($node) && isset($variables['page']['content'])) {
+    $variables['page']['content']['careers_opportunities'] = _bootstrap_barrio_careers_opportunities();
+  }
+}
+
+/**
+ * Checks whether a node is the Careers page.
+ */
+function _bootstrap_barrio_is_careers_node($node) {
+  if ($node->nid == 220) {
+    return TRUE;
+  }
+  $alias = drupal_get_path_alias('node/' . $node->nid);
+  return in_array(basename($alias), array('careers', 'career'), TRUE);
+}
+
+/**
+ * Builds the Careers opportunities listing.
+ *
+ * Loads published opportunity nodes directly so uploaded opportunities show
+ * up without depending on a particular Views display being configured.
+ */
+function _bootstrap_barrio_careers_opportunities() {
+  $query = new EntityFieldQuery();
+  $result = $query->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', 'opportunity')
+    ->propertyCondition('status', NODE_PUBLISHED)
+    ->propertyOrderBy('sticky', 'DESC')
+    ->propertyOrderBy('created', 'DESC')
+    ->addTag('node_access')
+    ->execute();
+
+  $rows = array();
+  if (!empty($result['node'])) {
+    foreach (node_load_multiple(array_keys($result['node'])) as $opportunity) {
+      $rows[] = _bootstrap_barrio_opportunity_card($opportunity);
+    }
+  }
+
+  if ($rows) {
+    $listing = '<div class="view view-opportunities"><div class="view-content">' . implode('', $rows) . '</div></div>';
+  }
+  else {
+    $listing = '<p class="careers-opportunities-empty">' . t('There are no open opportunities right now. Please check back soon.') . '</p>';
+  }
+
+  return array(
+    '#markup' => '<section class="careers-opportunities"><h2>' . t('Current Opportunities') . '</h2>' . $listing . '</section>',
+    '#weight' => 100,
+  );
+}
+
+/**
+ * Renders one opportunity card using the Opportunities view's markup.
+ */
+function _bootstrap_barrio_opportunity_card($node) {
+  $uri = 'node/' . $node->nid;
+  $card = '';
+
+  $fields = array(
+    'field_featured_image' => array('label' => 'hidden', 'settings' => array('image_link' => 'content')),
+    'field_category' => array('label' => 'hidden'),
+  );
+  foreach ($fields as $field_name => $display) {
+    if (!empty($node->{$field_name})) {
+      $field = field_view_field('node', $node, $field_name, $display);
+      $card .= '<div class="views-field views-field-' . drupal_html_class($field_name) . '">' . drupal_render($field) . '</div>';
+    }
+  }
+
+  $card .= '<div class="views-field views-field-title">' . l($node->title, $uri) . '</div>';
+  $card .= '<div class="views-field views-field-created">' . format_date($node->created, 'custom', 'j M Y') . '</div>';
+
+  if (!empty($node->field_summary)) {
+    $summary = field_view_field('node', $node, 'field_summary', array('label' => 'hidden'));
+    $card .= '<div class="views-field views-field-field-summary">' . drupal_render($summary) . '</div>';
+  }
+
+  $card .= '<div class="views-field views-field-nothing">' . l(t('Read more'), $uri, array('attributes' => array('class' => array('opportunity-read-more')))) . '</div>';
+
+  return '<div class="views-row">' . $card . '</div>';
 }
 
 /**

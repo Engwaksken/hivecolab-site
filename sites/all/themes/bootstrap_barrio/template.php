@@ -160,15 +160,17 @@ function _bootstrap_barrio_opportunity_card($node) {
   $uri = 'node/' . $node->nid;
   $card = '';
 
-  $fields = array(
-    'field_featured_image' => array('label' => 'hidden', 'settings' => array('image_link' => 'content')),
-    'field_category' => array('label' => 'hidden'),
-  );
-  foreach ($fields as $field_name => $display) {
-    if (!empty($node->{$field_name})) {
-      $field = field_view_field('node', $node, $field_name, $display);
-      $card .= '<div class="views-field views-field-' . drupal_html_class($field_name) . '">' . drupal_render($field) . '</div>';
-    }
+  // Always output the image area so cards without an image stay aligned.
+  $image = '';
+  if (!empty($node->field_featured_image)) {
+    $field = field_view_field('node', $node, 'field_featured_image', array('label' => 'hidden', 'settings' => array('image_link' => 'content')));
+    $image = drupal_render($field);
+  }
+  $card .= '<div class="views-field views-field-field-featured-image">' . $image . '</div>';
+
+  if (!empty($node->field_category)) {
+    $field = field_view_field('node', $node, 'field_category', array('label' => 'hidden'));
+    $card .= '<div class="views-field views-field-field-category">' . drupal_render($field) . '</div>';
   }
 
   $card .= '<div class="views-field views-field-title">' . l($node->title, $uri) . '</div>';

@@ -1499,9 +1499,52 @@ h2.big-text {
   display: none;
 }
 
+.careers-opportunities .view-opportunities .view-content {
+  align-items: stretch;
+}
+
 .careers-opportunities .view-opportunities .views-row {
   width: auto;
   max-width: none;
+  min-width: 0;
+  margin: 0;
+  float: none;
+}
+
+/* Same-size image area on every card, with or without an image. */
+.careers-opportunities .views-field-field-featured-image {
+  aspect-ratio: 16 / 10;
+}
+
+.careers-opportunities .views-field-field-featured-image .field,
+.careers-opportunities .views-field-field-featured-image .field-items,
+.careers-opportunities .views-field-field-featured-image .field-item,
+.careers-opportunities .views-field-field-featured-image a {
+  display: block;
+  height: 100%;
+  margin: 0;
+}
+
+.careers-opportunities .views-field-field-featured-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+}
+
+/* Reserve two lines for titles so dates and summaries line up. */
+.careers-opportunities .views-field-title {
+  min-height: calc(1.25rem * 1.35 * 2 + 1.5rem);
+}
+
+.careers-opportunities .views-field-field-summary p:last-child {
+  margin-bottom: 0;
+}
+
+/* Keep "Read more" pinned to the bottom of each card. */
+.careers-opportunities .views-field-nothing {
+  margin-top: auto;
 }
 
 .careers-opportunities > h2 {

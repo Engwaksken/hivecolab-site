@@ -292,6 +292,12 @@ a:hover {color: #ff5722;}
 .page-reports .header-wrapper #main-nav .navbar-nav > li > a {
   color: #414042;
 }
+.page-reports .header-wrapper:not(.sticky) .logo img {
+  height: var(--logo-height-sticky) !important;
+}
+.page-reports .header-wrapper:not(.sticky) #header {
+  padding-top: 0;
+}
 
 .mobile-only, .desktop-only{
   display: none;

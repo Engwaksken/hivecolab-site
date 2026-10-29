@@ -285,15 +285,12 @@ a:hover {color: #ff5722;}
 .sticky #navbar .navbar-nav>li>a{color: #414042;}
 .nav-link:hover, .nav-link:focus {color: #ebebeb;}
 
-/* On the Reports page, keep the primary/head navigation out of the initial
-   masthead and reveal it with the compact sticky header after scrolling. */
-.page-reports .header-wrapper:not(.sticky) #main-nav {
-  visibility: hidden;
-  pointer-events: none;
-}
-.page-reports .header-wrapper.sticky #main-nav {
+.page-reports .header-wrapper #main-nav {
   visibility: visible;
   pointer-events: auto;
+}
+.page-reports .header-wrapper #main-nav .navbar-nav > li > a {
+  color: #414042;
 }
 
 .mobile-only, .desktop-only{
